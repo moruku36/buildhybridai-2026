@@ -45,7 +45,7 @@ The official rules require, among other things: [2]
 - [ ] If entering as a team: all members registered on Devpost and a designated representative.
 - [ ] A final review of eligibility, intellectual-property rights, third-party permissions, and the official submission requirements.
 
-**Current repository status:** overview documentation only. No application, demo, contest submission, or open-source license has been added yet. Public visibility alone does not make a project open source; select and add an appropriate license before submission.
+**Current repository status:** the Relay workboard implementation is now included. See [setup and architecture](docs/IMPLEMENTATION.md), [initial validation](docs/VERIFICATION.md), and [Rust/WASM follow-up validation](docs/MAC_VALIDATION.md). Live Firebase inference and real-browser QA remain unverified. No demo, contest submission, or open-source license has been added. License selection requires the owner's decision; public visibility alone does not make a project open source.
 
 ## Judging
 

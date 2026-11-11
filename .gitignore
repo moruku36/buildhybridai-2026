@@ -1,0 +1,6 @@
+node_modules/
+dist/
+core/target/
+.env*
+!.env.example
+public/relay_core.wasm
