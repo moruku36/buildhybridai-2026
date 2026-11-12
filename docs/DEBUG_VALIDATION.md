@@ -8,7 +8,9 @@ Verified on November 12, 2026 with Node 26.13.0 and Vite 7.3.8.
 - Inspected generated JavaScript: Relay's debug-enabling helper, development provider callback, flag name and former placeholder site key are absent. Upstream SDK debug-support code may remain.
 - No real debug credential was generated, read or registered in these tests. No Firebase request, model inference, browser QA or production deployment is claimed.
 
-## Dependency audit
+## Dependency audit (historical; subsequently resolved)
+
+The four findings below were later resolved by a scoped patched gRPC override. See [dependency security follow-up](DEPENDENCY_SECURITY.md) for impact, compatibility limits and a clean-install audit result.
 
 The existing Vite 7.2.2 dependency had security advisories; it was updated to 7.3.8 and tests/build were repeated. npm audit still reports four high-severity affected packages through Firebase 13.0.0's Firestore dependency on @grpc/grpc-js 1.9.16 (~1.9.0). Relay does not import Firestore or run a gRPC server, but installed dependency exposure is not declared resolved. Do not blindly apply npm audit fix --force: the suggested Firebase downgrade would remove the required current AI API. Review an upstream-compatible fix separately.
 

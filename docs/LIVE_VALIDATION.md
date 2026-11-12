@@ -24,3 +24,11 @@ Offline regression suite: 18 tests passed, zero failures; Vite 7.3.8 production 
 ## Limits
 
 This is one cloud-response verification, not a device-inference, hybrid-fallback, Chrome compatibility, production-attestation or full-browser-matrix pass. The observed browser run preceded the banner/label fix; the fix has automated DOM coverage, not another live inference run. App Check used development-only debug registration. License selection, production deployment and contest submission remain pending.
+
+## Chrome follow-up status
+
+A separately installed official Windows Chrome 157.0.8103.39 binary was reported with a valid publisher signature, but was not launched for this follow-up. The inspected Windows 11 machine has about 32 GiB RAM, an RTX 3070 with 8 GiB VRAM and about 791 GiB free disk space. These static checks meet the published OS/GPU/storage thresholds in the [current Chrome Prompt API guide](https://developer.chrome.com/docs/ai/prompt-api), which lists web availability from Chrome 148. They do not establish model readiness, network eligibility or successful Firebase on-device inference.
+
+Model download and execution are deferred while possible contention with another scheduled GPU workload is unresolved. No Chrome flags or browser settings were changed. The recorded on-device failure above occurred in Brave; it is not a Chrome failure result.
+
+After the banner/label fix, the existing Windows board was reloaded without another inference call: the approved in_cloud result and blocked device task remained, the session-attempt counter reset to zero, and both select controls were found by their accessible combobox role and exact name.
