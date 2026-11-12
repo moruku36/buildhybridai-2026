@@ -22,12 +22,13 @@ const bundle=await build({entryPoints:['src/main.js'],bundle:true,write:false,fo
  `}));
 }}]});
 const button=(w,text)=>[...w.document.querySelectorAll('button')].find(b=>b.textContent===text);
-async function boot(tasks){
+async function boot(tasks,{locks,storage}={}){
  const dom=new JSDOM('<div id="app"></div>',{url:'http://localhost/',runScripts:'outside-only'}),w=dom.window;
- w.localStorage.setItem('relay-board-v1',JSON.stringify(tasks));
+ if(storage)Object.defineProperty(w,'localStorage',{value:storage});
+ if(tasks!==undefined)w.localStorage.setItem('relay-board-v1',JSON.stringify(tasks));
  w.fetch=async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(0)});
  w.WebAssembly={instantiate:async()=>({instance:{exports:previewCore}})};
- w.structuredClone=structuredClone;w.confirm=()=>true;
+ w.structuredClone=structuredClone;Object.defineProperty(w.navigator,'locks',{value:locks||{request:async(name,options,callback)=>callback({name})}});w.confirm=()=>true;
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true};
  w.HTMLDialogElement.prototype.close=function(){this.dispatchEvent(new w.Event('close'))};
  await w.eval(`(async()=>{${bundle.outputFiles[0].text}\n})()`);
@@ -46,7 +47,7 @@ test('cloud success updates banner through approval; App Check, failure and relo
  assert.match(w.document.querySelector('.status').textContent,/Cloud verified · Device unverified · last: in_cloud/);
  assert.match(w.document.querySelector('.stats').textContent,/2 \/ 6Session attempts/);
  assert.match(w.document.querySelector('.notice').textContent,/cloud permission/);
- button(w,'Read result').onclick();button(w,'Approve result').onclick();
+ button(w,'Read result').onclick();await button(w,'Approve result').onclick();
  assert.match(w.document.querySelector('.status').textContent,/Cloud verified · Device unverified/);
  const saved=JSON.parse(w.localStorage.getItem('relay-board-v1'));
  assert.equal(saved.find(t=>t.id==='cloud').state,'done');
@@ -63,15 +64,15 @@ test('paused execution edits repair consent and blocked routes without running o
  button(w,'Cancel').onclick();assert.equal(JSON.parse(w.localStorage.getItem('relay-board-v1'))[0].mode,'local');
  button(w,'Edit execution').onclick();d=w.document.querySelector('dialog');
  d.querySelector('select').value='hybrid';d.querySelector('select').onchange();d.querySelector('input').checked=true;
- button(w,'Save execution settings').onclick();
+ await button(w,'Save execution settings').onclick();
  let saved=JSON.parse(w.localStorage.getItem('relay-board-v1'))[0];
  assert.equal(saved.mode,'hybrid');assert.equal(saved.cloudAllowed,true);assert.equal(saved.state,'blocked');assert.equal(saved.brief,'Keep this brief');assert.equal(requests,0);
- button(w,'Return to queue').onclick();assert.equal(requests,0);
+ await button(w,'Return to queue').onclick();assert.equal(requests,0);
  button(w,'Edit execution').onclick();d=w.document.querySelector('dialog');d.querySelector('input').checked=false;
- button(w,'Save execution settings').onclick();await button(w,'Start queue').onclick();assert.equal(requests,0);
+ await button(w,'Save execution settings').onclick();await button(w,'Start queue').onclick();assert.equal(requests,0);
  assert.match(w.document.querySelector('.notice').textContent,/cloud permission/);
  button(w,'Edit execution').onclick();d=w.document.querySelector('dialog');d.querySelector('select').value='local';d.querySelector('select').onchange();assert.equal(d.querySelector('input').checked,false);assert.equal(d.querySelector('input').disabled,true);
- button(w,'Save execution settings').onclick();saved=JSON.parse(w.localStorage.getItem('relay-board-v1'))[0];assert.equal(saved.mode,'local');assert.equal(saved.cloudAllowed,false);
+ await button(w,'Save execution settings').onclick();saved=JSON.parse(w.localStorage.getItem('relay-board-v1'))[0];assert.equal(saved.mode,'local');assert.equal(saved.cloudAllowed,false);
  dom.window.close();
 });
 test('sending a review back pauses after the current request and requires explicit restart',async()=>{
@@ -82,7 +83,7 @@ test('sending a review back pauses after the current request and requires explic
  for(let n=0;n<10&&!finish;n++)await new Promise(resolve=>setTimeout(resolve,0));
  assert.equal(calls,1);
  assert.equal([...w.document.querySelectorAll('button')].filter(b=>b.textContent==='Edit execution').every(b=>b.disabled),true);
- button(w,'Read result').onclick();button(w,'Send back').onclick();
+ button(w,'Read result').onclick();await button(w,'Send back').onclick();
  finish({text:'Second draft',source:'in_cloud',createdAt:'2026-11-12'});await running;
  assert.match(w.document.querySelector('.notice').textContent,/Queue paused; press Start queue/);
  assert.equal(calls,1);let saved=JSON.parse(w.localStorage.getItem('relay-board-v1'));assert.equal(saved[0].state,'queued');assert.equal(saved[0].result,undefined);assert.equal(saved[1].state,'review');
@@ -99,15 +100,72 @@ test('revision feedback persists, resets cloud permission and reaches only the e
  button(w,'Read result').onclick();w.document.querySelector('#revision-feedback').value='Use three concise steps.';
  button(w,'Close').onclick();assert.equal(JSON.parse(w.localStorage.getItem('relay-board-v1'))[0].feedback,undefined);
  button(w,'Read result').onclick();w.document.querySelector('#revision-feedback').value='Use three concise steps.';
- button(w,'Send back').onclick();
+ await button(w,'Send back').onclick();
  let saved=JSON.parse(w.localStorage.getItem('relay-board-v1'))[0];
  assert.equal(saved.feedback,'Use three concise steps.');assert.equal(saved.cloudAllowed,false);assert.equal(saved.state,'queued');assert.equal(calls,0);
  await button(w,'Start queue').onclick();assert.equal(calls,0);
  const reload=await boot([saved]);assert.match(reload.w.document.querySelector('.card').textContent,/Use three concise steps/);reload.dom.window.close();
  button(w,'Edit execution').onclick();w.document.querySelector('input[name="executionConsent"]').checked=true;
- button(w,'Save execution settings').onclick();assert.equal(calls,0);
+ await button(w,'Save execution settings').onclick();assert.equal(calls,0);
  await button(w,'Start queue').onclick();assert.equal(calls,1);assert.equal(received,'Use three concise steps.');
  button(w,'Read result').onclick();assert.equal(w.document.querySelector('#revision-feedback').value,'Use three concise steps.');
- button(w,'Approve result').onclick();saved=JSON.parse(w.localStorage.getItem('relay-board-v1'))[0];assert.equal(saved.state,'done');
+ await button(w,'Approve result').onclick();saved=JSON.parse(w.localStorage.getItem('relay-board-v1'))[0];assert.equal(saved.state,'done');
  dom.window.close();
+});
+
+function sharedLocks(){
+ let held=false;
+ return {request:async(name,options,callback)=>{if(held)return callback(null);held=true;try{return await callback({name})}finally{held=false}}};
+}
+function sharedStorage(){const data=new Map();return {getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,String(v))};}
+test('second tab cannot run, preview, edit or recover live work; stale save refreshes without overwrite',async()=>{
+ const locks=sharedLocks(),storage=sharedStorage();
+ const task={id:'queued',title:'Synthetic shared task',brief:'Public',priority:1,sequence:0,state:'queued',mode:'cloud',cloudAllowed:true};
+ const a=await boot([task],{locks,storage});let finish,requests=0;
+ a.w.onGenerate=()=>{requests++;return new Promise(resolve=>{finish=resolve})};
+ const running=button(a.w,'Start queue').onclick();
+ for(let n=0;n<10&&!finish;n++)await new Promise(resolve=>setTimeout(resolve,0));
+ assert.equal(requests,1);
+ const b=await boot(undefined,{locks,storage});b.w.onGenerate=async()=>{requests++;throw Error('Forbidden second request')};
+ assert.match(b.w.document.querySelector('.notice').textContent,/Another tab owns/);
+ assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].state,'running');
+ await button(b.w,'Preview workflow').onclick();await button(b.w,'Start queue').onclick();
+ assert.equal(requests,1);assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].state,'running');
+ finish({text:'Shared draft',source:'in_cloud',createdAt:'2026-11-12'});await running;
+ await button(b.w,'Preview workflow').onclick();
+ assert.match(b.w.document.querySelector('.notice').textContent,/Board changed in another tab/);
+ assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].state,'review');
+ button(b.w,'Read result').onclick();await button(b.w,'Approve result').onclick();
+ assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].state,'done');
+ a.dom.window.close();b.dom.window.close();
+});
+test('stale queued edits cannot overwrite another tab; orphaned running state recovers only under a free lock',async()=>{
+ const locks=sharedLocks(),storage=sharedStorage();
+ const t={id:'q',title:'Synthetic',brief:'Public',priority:1,sequence:0,state:'queued',mode:'cloud',cloudAllowed:true};
+ const a=await boot([t],{locks,storage}),b=await boot(undefined,{locks,storage});
+ await button(a.w,'Change priority').onclick();await button(b.w,'Change priority').onclick();
+ assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].priority,2);
+ assert.match(b.w.document.querySelector('.notice').textContent,/Board changed/);
+ storage.setItem('relay-board-v1',JSON.stringify([{...t,state:'running'}]));
+ const c=await boot(undefined,{locks,storage});
+ assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].state,'blocked');
+ assert.match(c.w.document.querySelector('.notice').textContent,/previous request may have consumed quota/i);
+ a.dom.window.close();b.dom.window.close();c.dom.window.close();
+});
+
+test('unsupported locks and failed running-state persistence never start inference',async()=>{
+ const task={id:'q',title:'Synthetic',brief:'Public',priority:1,sequence:0,state:'queued',mode:'cloud',cloudAllowed:true};
+ const unsupported=await boot([task],{locks:{}});
+ assert.equal(button(unsupported.w,'Start queue').disabled,true);
+ assert.equal(button(unsupported.w,'Preview workflow').disabled,true);
+ let calls=0;unsupported.w.onGenerate=async()=>{calls++};
+ await button(unsupported.w,'Start queue').onclick();assert.equal(calls,0);
+ assert.match(unsupported.w.document.querySelector('.notice').textContent,/Web Locks unavailable/);
+ unsupported.dom.window.close();
+ const storage=sharedStorage(),locks=sharedLocks();const tab=await boot([task],{locks,storage});
+ storage.setItem=()=>{throw Error('Storage full')};tab.w.onGenerate=async()=>{calls++};
+ await button(tab.w,'Start queue').onclick();assert.equal(calls,0);
+ assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].state,'queued');
+ assert.match(tab.w.document.querySelector('.notice').textContent,/Storage is unavailable or full/);
+ tab.dom.window.close();
 });

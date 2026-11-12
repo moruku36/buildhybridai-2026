@@ -21,3 +21,7 @@ These instructions guide a fresh draft from the task's title and brief. The prev
 Adding, changing or removing the instructions clears cloud permission. For cloud/hybrid execution, use Edit execution to explicitly authorize sending the title, brief and instructions, then press Start queue. Local-only execution still has no cloud fallback. The instructions are serialized as untrusted JSON task data, not system instructions. Review approval remains required for the resulting draft.
 
 Validation: 27 offline tests passed and production build passed. New regressions cover persistence, cancellation, consent reset, explicit restart, bounded feedback validation and omission of prior output from prompts. No live inference was used.
+
+## Multiple tabs
+
+All board writes and the complete queue run now require the same Web Lock. A busy or unsupported lock blocks changes/execution; stale tabs refresh without overwriting newer data and require explicit retry. Interrupted-running recovery only occurs while holding the lock. See [scope and limitations](MULTI_TAB_SAFETY.md).

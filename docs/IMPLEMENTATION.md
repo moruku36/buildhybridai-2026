@@ -26,11 +26,11 @@ This first slice is **not a Rust-rendered UI**: DOM rendering remains JavaScript
 
 - Default task route is device-only, with no cloud fallback.
 - Each hybrid/cloud task requires explicit permission to transmit its title, brief and revision feedback to Google via Firebase AI Logic. Never paste sensitive information.
-- One in-flight call per tab; maximum six calls per page session, <=1200 output tokens requested per cloud call (on-device output has no equivalent configured cap; displayed output is truncated to 20,000 characters). This is **not a monetary budget** or a cross-tab/global quota. Configure Firebase quotas before live use.
+- One in-flight queue across cooperating tabs of the same origin/browser storage scope (Web Locks required); maximum six calls per page session, <=1200 output tokens requested per cloud call (on-device output has no equivalent configured cap; displayed output is truncated to 20,000 characters). This is **not a monetary budget** or a cross-tab/global quota. Configure Firebase quotas before live use.
 - Pause stops after the current call. It does not cancel or refund an in-flight request. No automatic retry after failures.
 - Reloaded running tasks become blocked. No blind duplicate call.
 - Every successful result needs human approval. Model output is plain text via textContent, never executed or rendered as HTML.
-- localStorage is unencrypted. Multiple open tabs are not coordinated in this initial slice. Do not use multiple tabs for live work yet.
+- localStorage is unencrypted. Web Locks serialize queue execution and board writes across cooperating tabs of the same origin; unsupported browsers fail closed. Reload older app versions before use. Locks do not coordinate other browsers/devices or cancel already-sent requests. See [multi-tab safety](MULTI_TAB_SAFETY.md).
 - Initial development used no live calls. A later authorized synthetic cloud task succeeded; the separate device attempt failed. See the live validation report.
 
 ## Local setup
