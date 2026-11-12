@@ -28,11 +28,14 @@ test('synthetic UI example edits and reapproves without inference, restores read
  w.document.querySelector('#human-result-text').value='Synthetic human edit, not AI';await btn(w,'Save local edit').onclick();
  btn(w,'Read result').onclick();await btn(w,'Approve result').onclick();
  assert.equal(JSON.parse(w.localStorage.getItem('relay-board-v1'))[0].state,'review');
+ assert.match(w.document.querySelector('dialog [role=alert]').textContent,/explicit acknowledgment and a reason/);
  assert.equal(w.document.querySelectorAll('select[id^="criterion-"]').length,2);
  w.document.querySelector('#criterion-0').value='addressed';
  w.document.querySelector('#criteria-override').checked=true;w.document.querySelector('#criteria-override-reason').value='Synthetic test: manual check remains unspecified';
  await btn(w,'Approve result').onclick();
  saved=JSON.parse(w.localStorage.getItem('relay-board-v1'));assert.equal(saved[0].state,'done');assert.equal(saved[0].result.humanEdit.text,'Synthetic human edit, not AI');assert.equal(fetches(),1);
+ assert.match(w.document.querySelector('.notice').textContent,/Result approved and saved locally/);
+ assert.doesNotMatch(w.document.querySelector('.notice').textContent,/require explicit/);
  assert.equal(saved[0].result.criteriaReview.statuses[1],'unverified');
  btn(w,'Read result').onclick();btn(w,'Show approved handoff packet').onclick();
  const packet=JSON.parse(w.document.querySelector('#approved-handoff-packet').value);

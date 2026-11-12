@@ -350,6 +350,7 @@ test('criteria approval rollback and stale tab protection preserve saved board',
  const storage=sharedStorage();const {dom,w}=await boot([task],{storage});
  button(w,'Read result').onclick();w.document.querySelector('#criterion-0').value='addressed';
  const set=storage.setItem;storage.setItem=()=>{throw Error('Quota test')};await button(w,'Approve result').onclick();
+ assert.match(w.document.querySelector('dialog [role=alert]').textContent,/Storage is unavailable or full/);
  assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].result.criteriaReview,undefined);
  storage.setItem=set;await button(w,'Approve result').onclick();
  assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].state,'done');
