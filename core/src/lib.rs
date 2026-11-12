@@ -1,11 +1,11 @@
 //! Deterministic orchestration policy. No network, model inference, or shell execution.
 //! State: queued=0, running=1, review=2, done=3, blocked=4.
-//! Events: start=0, result=1, approve=2, reject=3, fail=4, retry=5.
+//! Events: start=0, result=1, approve=2, reject=3, fail=4, retry=5, edit=6.
 #[no_mangle]
 pub extern "C" fn transition(state: u32, event: u32) -> i32 {
     match (state, event) {
         (0, 0) => 1, (1, 1) => 2, (2, 2) => 3,
-        (2, 3) => 0, (1, 4) => 4, (4, 5) => 0,
+        (2, 3) => 0, (1, 4) => 4, (4, 5) => 0, (2, 6) | (3, 6) => 2,
         _ => -1,
     }
 }
@@ -23,6 +23,7 @@ pub extern "C" fn may_run(cloud_allowed: u32, local_only: u32, running: u32, cal
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test] fn editing_requires_review_again() { assert_eq!(transition(3,6),2); assert_eq!(transition(2,6),2); assert_eq!(transition(0,6),-1); assert_eq!(transition(1,6),-1); assert_eq!(transition(4,6),-1); }
     #[test] fn review_is_required() { assert_eq!(transition(1,2),-1); assert_eq!(transition(1,1),2); assert_eq!(transition(2,2),3); }
     #[test] fn retries_are_explicit() { assert_eq!(transition(4,0),-1); assert_eq!(transition(4,5),0); }
     #[test] fn priority_precedes_age() { assert!(rank(1,999999)<rank(2,0)); }

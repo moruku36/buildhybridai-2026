@@ -1,6 +1,6 @@
 export const HISTORY_PER_TASK=3,HISTORY_TEXT_LIMIT=8000,HISTORY_BOARD_BUDGET=80000;
 const sources=['PREVIEW','LOCAL_DETERMINISTIC','in_cloud','on_device','UNKNOWN'];
-const cost=h=>h.text.length+h.feedback.length;
+const cost=h=>h.text.length+h.feedback.length+(h.humanEdit?.text.length||0);
 const validDate=v=>typeof v==='string'&&v.length<=64&&Number.isFinite(Date.parse(v));
 export function validateHistory(tasks){
  let total=0;
@@ -10,6 +10,7 @@ export function validateHistory(tasks){
   if(!Array.isArray(task.history)||task.history.length>HISTORY_PER_TASK)throw Error('Invalid draft history');
   for(const h of task.history){
    if(!h||typeof h.text!=='string'||h.text.length>HISTORY_TEXT_LIMIT||typeof h.feedback!=='string'||h.feedback.length>2000||!sources.includes(h.source)||h.reviewState!=='sent_back'||typeof h.shortened!=='boolean'||(h.createdAt!==null&&!validDate(h.createdAt))||!validDate(h.archivedAt))throw Error('Invalid draft history');
+   if(h.humanEdit!==undefined&&(!h.humanEdit||typeof h.humanEdit.text!=='string'||h.humanEdit.text.length>HISTORY_TEXT_LIMIT||!validDate(h.humanEdit.editedAt)||typeof h.humanEdit.shortened!=='boolean'))throw Error('Invalid edited history');
    total+=cost(h);
   }
  }
@@ -23,6 +24,7 @@ export function archiveRejectedDraft(tasks,task,now=new Date().toISOString()){
   source:sources.includes(task.result.source)?task.result.source:'UNKNOWN',
   createdAt:validDate(task.result.createdAt)?task.result.createdAt:null,archivedAt:now,
   reviewState:'sent_back',shortened:text.length>HISTORY_TEXT_LIMIT});
+ if(task.result.humanEdit){const h=task.result.humanEdit;task.history.at(-1).humanEdit={text:h.text.slice(0,HISTORY_TEXT_LIMIT),editedAt:h.editedAt,shortened:h.text.length>HISTORY_TEXT_LIMIT};}
  const removeOldest=t=>{t.history.shift();t.historyPruned=Math.min(1000000,(t.historyPruned||0)+1)};
  while(task.history.length>HISTORY_PER_TASK)removeOldest(task);
  let total=tasks.reduce((sum,t)=>sum+(t.history||[]).reduce((n,h)=>n+cost(h),0),0);

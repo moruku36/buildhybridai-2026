@@ -68,3 +68,13 @@ The response had source in_cloud and timestamp 2026-11-12T04:00:20.181Z. The UI 
 The next existing P2 hybrid task had cloud permission false and stopped at the permission gate before sending. An attempted Pause interaction occurred after generation and did not execute; the observed stop was due to the permission gate, not a verified pause action.
 
 This extends the earlier intake-only browser check to one real cloud-response-and-review flow. No additional AI attempt, new token generation/registration, configuration or billing change, device inference, GPU operation or download occurred. The QA tab was closed afterward and the existing main board was retained. Production attestation, device inference and general autonomous implementation remain unverified or outside scope.
+
+## PR #1 human-edit review UI verification (Brave, synthetic fixture)
+
+On November 12, 2026, Windows Brave checked commit bba9bae on an isolated loopback QA origin, without Firebase configuration or a WASM file. This run used the JavaScript preview core; Start queue stayed disabled, the attempt counter stayed at 0/6, and AI remained disconnected.
+
+The explicit development-only TEST_FIXTURE was created at 2026-11-12T07:13:28.710Z. After a first local edit, the result required approval; expanding the original confirmed that its text was unchanged. Approval returned the task to done with a reapproval timestamp of 2026-11-12T07:14:06.412Z.
+
+A second edit at 2026-11-12T07:14:13.163Z removed approval again, returned the result to review and hid the handoff button. After separate reapproval, Show approved handoff text displayed the latest text in a read-only field: "TEST_FIXTURE: second local edit after approval. Use centimetres explicitly. No AI." The UI identified the original source as TEST_FIXTURE, labeled the human-edited/reapproved version and stated that nothing was sent, downloaded or executed.
+
+No external transmission, AI request, GPU operation, clipboard write or download occurred. This real-browser evidence covers the JavaScript review flow only. Rust tests, WASM build and transition parity were verified separately on Mac. The normal Windows WASM file-transfer path stopped because extended-attribute support was unavailable; no alternate transfer was used. The QA tab was closed afterward. PR #1 remains a proposed change pending owner approval, not a merged release.
