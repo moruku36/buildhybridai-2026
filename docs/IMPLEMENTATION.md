@@ -1,5 +1,9 @@
 # Relay: a workboard that moves work forward
 
+## Architecture navigation and design status — November 13, 2026
+
+[Canonical overall architecture](ARCHITECTURE.md) maps current source, consent/content-review/manual-export boundaries, storage/failures and paper-inspired **unimplemented** request-plan/payload/preflight proposals. DLite was reviewed as HTML text, not independently checked PDF figures; the far-edge paper review is **abstract-only and incomplete**. No runtime, schema, dependency or feature change is delivered by that design. The live records below are historical, not fresh validation; device/hybrid remain unvalidated. Follow **app usage guide → device/hybrid validation → submission preparation last**. Implementation and validation wait remains in place while runtime repair is handled separately; proposed features do not auto-resume work or replace that order.
+
 ## Current truth
 
 Published implementation slice, not a submitted entry or deployed application. The board, persistence, priority changes, explicit preview fixtures, review/approve/requeue, interrupted-run recovery, and export are implemented. Rust tests and a WASM build passed on a Mac validation machine; see [validation](MAC_VALIDATION.md). Build the WASM core locally using the steps below; compiled binaries are not committed. Without it, the browser labels its JavaScript preview core and disables live inference. One live cloud response and review flow were verified on Windows/Brave; see [live validation and limits](LIVE_VALIDATION.md). On-device inference failed on that environment, while hybrid fallback and wider browser QA remain **unverified**. Firebase project configuration and App Check registration are not included.
