@@ -15,6 +15,8 @@ test('receipts distinguish requested route from actual SDK source, elapsed time 
  assert.throws(()=>createExecutionReceipt('invented','in_cloud',1));
  assert.match(executionReceiptLines({source:'in_cloud'}).join(' '),/unknown/);
  assert.match(executionReceiptLines({source:'TEST_FIXTURE'}).join(' '),/No AI execution receipt/);
+ const legacy=task();legacy.result.source='future-source';delete legacy.result.executionReceipt;validateTasks([legacy]);
+ const legacyLines=executionReceiptLines(legacy.result).join(' ');assert.match(legacyLines,/unknown/);assert.doesNotMatch(legacyLines,/preview, fixture or local|No AI/);
  assert.match(executionReceiptLines({source:'in_cloud',executionReceipt:createExecutionReceipt('local','in_cloud',1)}).join(' '),/Warning/);
 });
 test('receipt validation rejects forged shape, invalid bounds and mismatched source but accepts legacy',()=>{

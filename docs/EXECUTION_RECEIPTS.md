@@ -9,7 +9,7 @@ Each new successful AI draft records four local fields: receipt version, request
 - A device-preferred request returning `in_cloud` is labeled as cloud-served. No fallback cause is invented; the receipt does not record one.
 - A source that contradicts an exclusive requested route produces a visible warning. The receipt does not change Firebase routing or permit another call.
 - Failed/interrupted calls do not acquire successful receipts. Existing attempt accounting and explicit retry rules remain unchanged.
-- Preview fixtures, synthetic review examples and deterministic local checks have no AI receipt. Old results retain unknown route/timing; no values are backfilled.
+- Preview fixtures, synthetic review examples and deterministic local checks have no AI receipt. Old results retain unknown route/timing; no values are backfilled. Unfamiliar legacy source labels are not classified as non-AI.
 
 The review dialog shows the receipt for the **original generated text**. Human editing and reapproval preserve it without pretending another inference occurred. Sent-back history retains a bounded copy alongside the original excerpt. Approved handoff JSON includes `provenance.executionReceipt` (null for older results). Receipts are never appended to model prompts.
 
@@ -25,3 +25,5 @@ Developed against main `348171344087214b120ca82d691d08beca7d1271`.
 - No live Firebase request, GPU/model work, device download, browser interaction QA, Rust change/build, configuration or production deployment was performed for this change. The isolated checkout does not contain the ignored WASM binary, so this bundle is not a complete live-inference release.
 
 The previous single cloud-response observation remains the only documented successful live inference. On-device inference and hybrid fallback remain unverified. These receipts make future authorized validation easier to inspect; they do not complete that validation or the competition submission requirements.
+
+Independent review found no blocking defects and one legacy-label wording issue: unfamiliar old SDK sources were incorrectly grouped with previews/local results. The fallback now remains unknown; a focused regression covers this case. Browser QA was attempted but could not begin because the validation Mac was locked.
