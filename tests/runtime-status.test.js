@@ -290,3 +290,39 @@ test('stale issue intake cannot overwrite another tab and source edits require a
  assert.equal(button(b.w,'Add reviewed issue to queue').disabled,true);assert.equal(b.w.document.querySelector('#issue-approval').checked,false);
  a.dom.window.close();b.dom.window.close();
 });
+
+const editableTask=()=>({id:'edit',title:'Public plan',brief:'Synthetic',priority:1,sequence:0,state:'done',mode:'cloud',cloudAllowed:true,result:{text:'Original draft',source:'in_cloud',createdAt:'2026-11-12T00:00:00Z'}});
+test('human edit cancellation, reapproval, handoff and history preserve original without AI',async()=>{
+ const {dom,w}=await boot([editableTask()]);
+ button(w,'Read result').onclick();button(w,'Edit result locally').onclick();w.document.querySelector('#human-result-text').value='Discard';button(w,'Cancel').onclick();
+ assert.equal(JSON.parse(w.localStorage.getItem('relay-board-v1'))[0].state,'done');
+ button(w,'Read result').onclick();button(w,'Edit result locally').onclick();w.document.querySelector('#human-result-text').value='<img src=x> Human version';await button(w,'Save local edit').onclick();
+ let t=JSON.parse(w.localStorage.getItem('relay-board-v1'))[0];assert.equal(t.state,'review');assert.equal(t.result.text,'Original draft');assert.equal(t.result.humanEdit.approvedAt,undefined);
+ button(w,'Read result').onclick();assert.equal(button(w,'Show approved handoff text'),undefined);
+ assert.match(w.document.querySelector('dialog').textContent,/Human-edited version; original inference source/);assert.equal(w.document.querySelector('img'),null);
+ await button(w,'Approve result').onclick();button(w,'Read result').onclick();await button(w,'Show approved handoff text').onclick();
+ const area=w.document.querySelector('#approved-handoff-text');assert.equal(area.readOnly,true);assert.equal(area.value,'<img src=x> Human version');button(w,'Close').onclick();
+ button(w,'Read result').onclick();button(w,'Edit result locally').onclick();w.document.querySelector('#human-result-text').value='Second edit';await button(w,'Save local edit').onclick();
+ button(w,'Read result').onclick();await button(w,'Send back').onclick();
+ t=JSON.parse(w.localStorage.getItem('relay-board-v1'))[0];assert.equal(t.history[0].text,'Original draft');assert.equal(t.history[0].humanEdit.text,'Second edit');assert.equal(w.aiModuleLoads,undefined);dom.window.close();
+});
+test('edit and approval persistence failures roll back state while retaining unsaved editor text',async()=>{
+ const storage=sharedStorage(),{dom,w}=await boot([editableTask()],{storage});
+ button(w,'Read result').onclick();button(w,'Edit result locally').onclick();w.document.querySelector('#human-result-text').value='Saved after retry';
+ const set=storage.setItem;storage.setItem=()=>{throw Error('Quota')};
+ await button(w,'Save local edit').onclick();assert.equal(w.document.querySelector('#human-result-text').value,'Saved after retry');
+ assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].state,'done');assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].result.humanEdit,undefined);
+ storage.setItem=set;await button(w,'Save local edit').onclick();button(w,'Read result').onclick();
+ storage.setItem=()=>{throw Error('Quota')};await button(w,'Approve result').onclick();
+ assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].state,'review');assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].result.humanEdit.approvedAt,undefined);
+ storage.setItem=set;await button(w,'Approve result').onclick();assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].state,'done');dom.window.close();
+});
+test('stale editor rejects saving and retains user text for manual rescue',async()=>{
+ const locks=sharedLocks(),storage=sharedStorage();const a=await boot([editableTask()],{locks,storage}),b=await boot(undefined,{locks,storage});
+ for(const x of [a,b]){button(x.w,'Read result').onclick();button(x.w,'Edit result locally').onclick();}
+ a.w.document.querySelector('#human-result-text').value='First tab';b.w.document.querySelector('#human-result-text').value='Rescue this text';
+ await button(a.w,'Save local edit').onclick();await button(b.w,'Save local edit').onclick();
+ assert.equal(b.w.document.querySelector('#human-result-text').value,'Rescue this text');assert.equal(button(b.w,'Save local edit').disabled,true);
+ assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].result.humanEdit.text,'First tab');
+ assert.match(b.w.document.querySelector('dialog').textContent,/manual copying/);a.dom.window.close();b.dom.window.close();
+});
