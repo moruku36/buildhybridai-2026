@@ -133,10 +133,23 @@ function showHumanEditor(t){
 }
 function showHandoff(t,packet=false){
  return withBoardWrite(()=>{
-  const text=packet?handoffPacket(t):handoffText(t),d=node('dialog'),area=node('textarea'),label=node('label',packet?'Approved handoff packet':'Approved handoff text');
+  const text=packet?handoffPacket(t):handoffText(t),version=JSON.stringify(t),d=node('dialog'),area=node('textarea'),label=node('label',packet?'Approved handoff packet':'Approved handoff text');
   area.id=packet?'approved-handoff-packet':'approved-handoff-text';area.readOnly=true;area.value=text;label.htmlFor=area.id;label.append(area);
-  d.append(node('h2',packet?'Approved context and result packet':'Approved text for manual handoff'),node('p','Original source: '+t.result.source+'. '+(t.result.humanEdit?'Human-edited locally and reapproved.':'Original draft approved.')+' Select and copy manually. Nothing is sent, downloaded or executed. This is a snapshot; edits later require approval again.'),label);
-  if(packet)d.append(node('p','Inspect the whole packet before copying. Do not include secrets or personal information. Approval is content review, not permission for downstream execution.'));const close=node('button','Close');close.onclick=()=>d.close();d.append(close);d.addEventListener('close',()=>d.remove());document.body.append(d);d.showModal();area.focus();area.select();
+  d.append(node('h2',packet?'Approved context and result packet':'Approved text for manual handoff'),node('p','Original source: '+t.result.source+'. '+(t.result.humanEdit?'Human-edited locally and reapproved.':'Original draft approved.')+' Select and copy manually. Opening this view sends, downloads and executes nothing. This is a snapshot; edits later require approval again.'),label);
+  if(packet){
+   const error=node('p',undefined,'error');error.setAttribute('role','alert');
+   const download=node('button','Download inspected packet');
+   download.onclick=()=>withBoardWrite(()=>{
+    if(!d.isConnected||!tasks.includes(t)||t.state!=='done'||JSON.stringify(t)!==version)throw Error('Approved content changed. Reopen the current approved packet before downloading.');
+    // Revalidate approval; save exactly the inspected snapshot, including its assembly time.
+    handoffText(t);
+    const url=URL.createObjectURL(new Blob([text],{type:'application/json;charset=utf-8'}));
+    try{const a=node('a');a.href=url;a.download='relay-approved-handoff.json';a.click();}
+    finally{setTimeout(()=>URL.revokeObjectURL(url),1000);}
+   },message=>{if(d.isConnected)error.textContent=message;});
+   d.append(node('p','Inspect the whole packet before copying or downloading it. Download inspected packet saves this JSON snapshot using your browser save settings; it does not contact an agent, upload data or execute instructions. Later edits cannot revoke saved files. Keep secrets and personal information out. Approval is content review, not permission for downstream execution.'),download,error);
+  }
+  const close=node('button','Close');close.onclick=()=>d.close();d.append(close);d.addEventListener('close',()=>d.remove());document.body.append(d);d.showModal();area.focus();area.select();
  });
 }
 

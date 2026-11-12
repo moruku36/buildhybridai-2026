@@ -69,6 +69,10 @@ For a manual, read-only model-readiness check that does not initialize Firebase 
 
 Queued cards expose **Run this task only** for an explicit one-card run followed by a pause. Other queued tasks do not start, regardless of priority. It shares the normal queue's permission, Web Locks, stale-storage, session attempt limits and receipt path; it is not a separate inference route or proof of hybrid readiness. **Start queue** retains priority/FIFO behavior. See [one-task workflow and verification limits](SINGLE_TASK_EXECUTION.md).
 
+## Approved handoff file
+
+After approving the current AI draft, inspect **Show approved handoff packet** and optionally use **Download inspected packet** to request a local JSON snapshot. It preserves the displayed request, approved text and original-run evidence without a new inference or external send. Approval and board freshness are rechecked on the download click. Actual browser saving is not confirmed; already-saved files cannot be revoked. See [workflow and verification limits](HANDOFF_DOWNLOAD.md).
+
 ## Original-draft execution receipts
 
 New successful AI drafts record their requested route, SDK-reported actual source and whole-operation elapsed time. Review, sent-back history and approved handoff preserve this original-run evidence separately from human edits. Legacy results, fixtures and local checks do not acquire invented evidence. These local, unsigned observations do not prove runtime availability after reload or estimate charges. See [execution receipt behavior and validation](EXECUTION_RECEIPTS.md).
