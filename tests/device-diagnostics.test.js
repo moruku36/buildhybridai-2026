@@ -1,10 +1,10 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {checkDeviceAvailability,deviceCheckOptions,describeDeviceAvailability} from '../src/device-diagnostics.js';
-test('availability diagnostics preserve all four states and only call availability with SDK defaults',async()=>{
+test('availability diagnostics preserve all four states and only call availability with shared text-only options',async()=>{
  for(const status of ['available','downloadable','downloading','unavailable']){
   let calls=0;
-  const provider={availability(options){calls++;assert.deepEqual(options,{expectedInputs:[{type:'text',languages:['en']},{type:'image'}],expectedOutputs:[{type:'text',languages:['en']}]});return Promise.resolve(status)},
+  const provider={availability(options){calls++;assert.deepEqual(options,{expectedInputs:[{type:'text',languages:['en']}],expectedOutputs:[{type:'text',languages:['en']}]});return Promise.resolve(status)},
    get create(){throw Error('create must never be accessed')},get prompt(){throw Error('prompt must never be accessed')}};
   assert.deepEqual(await checkDeviceAvailability(provider),{apiPresent:true,status});assert.equal(calls,1);
   assert.equal(typeof describeDeviceAvailability({apiPresent:true,status}),'string');

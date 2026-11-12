@@ -2,7 +2,7 @@
 
 Use **Check device availability** for a lightweight browser check before arranging a separate on-device validation run. It checks the existence of LanguageModel.availability and calls only availability. No check runs automatically at startup.
 
-The options match Relay's current Firebase AI SDK 13.0.0 defaults: English text and image inputs, English text output. Although Relay currently sends text tasks, the SDK default also includes image input. If the SDK or Relay's onDeviceParams changes, update the diagnostic options and tests together.
+Relay explicitly requests English text input and output through the public Firebase onDeviceParams.createOptions API. Both Firebase inference setup and availability diagnostics use the same deviceModelOptions function. This replaces the SDK's broader default text-plus-image input requirement because this MVP only sends text. Image generation remains a separate optional future feature. No SDK-internal field or inference bypass is used.
 
 - available: the model reports readiness for those options, not proof of successful inference.
 - downloadable: a model download would be needed; this button does not start it.
@@ -18,4 +18,4 @@ References: [Chrome Prompt API](https://developer.chrome.com/docs/ai/prompt-api)
 
 Offline tests use synthetic providers; no device API was called during development of this feature.
 
-Validation for this change: 21 offline tests passed, zero failures; Vite 7.3.8 production build passed. No live browser availability, model creation, download, inference or Firebase request was executed by these checks.
+Validation for this change: 22 offline tests passed, zero failures; Vite 7.3.8 production build passed. No live browser availability, model creation, download, inference or Firebase request was executed by these checks.

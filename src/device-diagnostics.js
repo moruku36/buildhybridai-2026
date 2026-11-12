@@ -1,9 +1,6 @@
-// Match Firebase AI 13.0.0 ChromeAdapter defaults used by Relay.
-// Do not import Firebase: initialization can generate credentials or cause requests.
-export const deviceCheckOptions=()=>({
- expectedInputs:[{type:'text',languages:['en']},{type:'image'}],
- expectedOutputs:[{type:'text',languages:['en']}],
-});
+// No Firebase import: availability diagnostics must not initialize credentials.
+import {deviceModelOptions} from './device-options.js';
+export const deviceCheckOptions=deviceModelOptions;
 export async function checkDeviceAvailability(provider){
  if(!provider||typeof provider.availability!=='function')return {apiPresent:false,status:'unknown'};
  let timer;

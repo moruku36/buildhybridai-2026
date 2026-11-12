@@ -1,3 +1,4 @@
+import {deviceModelOptions} from './device-options.js';
 import {initializeApp} from 'firebase/app';
 import {initializeAppCheck,ReCaptchaV3Provider,CustomProvider,getToken} from 'firebase/app-check';
 import {getAI,getGenerativeModel,GoogleAIBackend,InferenceMode} from 'firebase/ai';
@@ -29,7 +30,7 @@ export function prepareModel(mode,onProgress){
  initializeConnection();
  if(!ai)ai=getAI(app,{backend:new GoogleAIBackend()});
  const modes={local:InferenceMode.ONLY_ON_DEVICE,hybrid:InferenceMode.PREFER_ON_DEVICE,cloud:InferenceMode.ONLY_IN_CLOUD};
- const model=getGenerativeModel(ai,{mode:modes[mode],inCloudParams:{model:env.VITE_CLOUD_MODEL||'gemini-3.5-flash-lite',generationConfig:{maxOutputTokens:1200}}});
+ const model=getGenerativeModel(ai,{mode:modes[mode],onDeviceParams:{createOptions:deviceModelOptions()},inCloudParams:{model:env.VITE_CLOUD_MODEL||'gemini-3.5-flash-lite',generationConfig:{maxOutputTokens:1200}}});
  // This function is invoked directly from the user's Start interaction.
  let ready=mode==='cloud'?Promise.resolve():model.initializeDeviceModel(onProgress);
  // Explicitly approved hybrid tasks may use Firebase's cloud fallback if device setup fails.
