@@ -51,7 +51,7 @@ npm run build
 
 A Rust-less preview runs with `npm run dev`; Start queue stays disabled. Preview workflow creates a clearly labeled static fixture, never fake AI telemetry. Production builds must include the compiled `public/relay_core.wasm`; verify its presence in dist before release.
 
-Firebase setup: follow the official guide to enable Firebase AI Logic, register the web app and App Check attestation, and verify authorized domains. Do not embed service-account keys, Gemini secrets, or debug tokens. This code initializes ReCaptchaV3Provider using a public site key; it does not create or safelist debug tokens. Local debug provider setup requires a separate authorized configuration step if production attestation cannot run locally. Chrome and on-device model preparation must meet the official current requirements. The model download can be large and lengthy.
+Firebase setup: follow the official guide to enable Firebase AI Logic, register the web app and App Check attestation, and verify authorized domains. Do not embed service-account keys, Gemini secrets, or debug tokens. This code initializes ReCaptchaV3Provider using a public site key. Optional development-only debugging is available; credential generation and registration require separate authorization. See [local App Check and current P4SA authorization](LOCAL_APP_CHECK.md). No supplied token string is accepted or included in source. Explicit loopback debug mode may omit the reCAPTCHA site key; production cannot. Initialize connection provides an inference-free bootstrap step. Chrome and on-device model preparation must meet the official current requirements. The model download can be large and lengthy.
 
 ## Sources and decisions checked November 12, 2026 UTC
 
