@@ -32,3 +32,11 @@ A separately installed official Windows Chrome 157.0.8103.39 binary was reported
 Model download and execution are deferred while possible contention with another scheduled GPU workload is unresolved. No Chrome flags or browser settings were changed. The recorded on-device failure above occurred in Brave; it is not a Chrome failure result.
 
 After the banner/label fix, the existing Windows board was reloaded without another inference call: the approved in_cloud result and blocked device task remained, the session-attempt counter reset to zero, and both select controls were found by their accessible combobox role and exact name.
+
+## Deterministic checklist UI verification (Brave)
+
+On November 12, 2026, an isolated test board on the local QA origin was checked at commit 22b34a77. A P1 local checklist ran ahead of an unconsented P2 hybrid task and reached review with source LOCAL_DETERMINISTIC. The banner remained AI not connected and the session counter remained at zero. The result contained three unchecked items, identified itself as not AI-generated, and explicitly stated that none of the listed work had been performed.
+
+Download was absent before approval. Approving the document produced Done 1, and reopening the result exposed Download approved Markdown. One manual download action was attempted, but the browser download-event wait timed out and the expected file was not found in the checked default Downloads location. Actual file saving therefore remains unverified; this observation alone does not establish an application defect. No second download attempt or speculative code change was made.
+
+This validates the local generation and human-review UI, not file-delivery completion, device inference or hybrid fallback. No Firebase initialization, live inference or GPU work was performed in this check. Browser save behavior requires separate verification.
