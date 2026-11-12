@@ -245,3 +245,48 @@ test('local JSON check retains failed structured evidence through review/reload 
  assert.match(reload.w.document.querySelector('dialog pre').textContent,/Result: FAIL/);assert.equal(saved[0].result.data.valid,false);
  assert.equal(saved[0].state,'done');reload.dom.window.close();dom.window.close();
 });
+
+function fillIssue(w){
+ button(w,'Prepare public issue').onclick();
+ const source=w.document.querySelector('#issue-source');source.value='Public issue\nCreate a plan';source.oninput();
+ button(w,'Propose editable task').onclick();
+ w.document.querySelector('#issue-acceptanceCriteria').value='Plan has test steps';
+ w.document.querySelector('#issue-acceptanceCriteria').oninput();
+ button(w,'Review queued content').onclick();
+ const approval=w.document.querySelector('#issue-approval');approval.checked=true;approval.onchange();
+}
+test('issue intake invalidates review on edits, adds once without AI, then uses existing explicit cloud flow',async()=>{
+ const {dom,w}=await boot([]);fillIssue(w);
+ const goal=w.document.querySelector('#issue-goal');goal.value='Updated public goal';goal.oninput();
+ assert.equal(w.document.querySelector('#issue-approval').checked,false);assert.equal(button(w,'Add reviewed issue to queue').disabled,true);
+ button(w,'Review queued content').onclick();const approval=w.document.querySelector('#issue-approval');approval.checked=true;approval.onchange();
+ const add=button(w,'Add reviewed issue to queue');await Promise.all([add.onclick(),add.onclick()]);
+ let saved=JSON.parse(w.localStorage.getItem('relay-board-v1'));assert.equal(saved.length,1);
+ assert.equal(saved[0].mode,'local');assert.equal(saved[0].cloudAllowed,false);assert.equal(saved[0].state,'queued');assert.equal(w.aiModuleLoads,undefined);
+ await add.onclick();assert.equal(JSON.parse(w.localStorage.getItem('relay-board-v1')).length,1);
+ button(w,'Edit execution').onclick();assert.match(w.document.querySelector('dialog pre').textContent,/Updated public goal/);
+ const select=w.document.querySelector('#execution-mode');select.value='cloud';select.onchange();
+ w.document.querySelector('input[name=executionConsent]').checked=true;await button(w,'Save execution settings').onclick();
+ assert.equal(w.aiModuleLoads,undefined);await button(w,'Start queue').onclick();
+ saved=JSON.parse(w.localStorage.getItem('relay-board-v1'));assert.equal(saved[0].state,'review');
+ button(w,'Read result').onclick();await button(w,'Approve result').onclick();
+ assert.equal(JSON.parse(w.localStorage.getItem('relay-board-v1'))[0].state,'done');dom.window.close();
+});
+test('issue intake rolls back unsaved in-memory addition and retry adds exactly once',async()=>{
+ const storage=sharedStorage();const {dom,w}=await boot([],{storage});fillIssue(w);
+ const set=storage.setItem;storage.setItem=()=>{throw Error('Quota test')};
+ await button(w,'Add reviewed issue to queue').onclick();
+ assert.equal(JSON.parse(storage.getItem('relay-board-v1')).length,0);
+ assert.equal(w.document.querySelectorAll('.card').length,0);assert.equal(w.aiModuleLoads,undefined);
+ storage.setItem=set;button(w,'Review queued content').onclick();const approval=w.document.querySelector('#issue-approval');approval.checked=true;approval.onchange();
+ await button(w,'Add reviewed issue to queue').onclick();assert.equal(JSON.parse(storage.getItem('relay-board-v1')).length,1);dom.window.close();
+});
+test('stale issue intake cannot overwrite another tab and source edits require a new proposal',async()=>{
+ const storage=sharedStorage(),locks=sharedLocks();const a=await boot([],{storage,locks}),b=await boot(undefined,{storage,locks});
+ fillIssue(a.w);fillIssue(b.w);await button(a.w,'Add reviewed issue to queue').onclick();
+ await button(b.w,'Add reviewed issue to queue').onclick();assert.equal(JSON.parse(storage.getItem('relay-board-v1')).length,1);
+ assert.match(b.w.document.querySelector('.notice').textContent,/Board changed in another tab/);
+ fillIssue(b.w);const source=b.w.document.querySelector('#issue-source');source.value='Changed source';source.oninput();button(b.w,'Review queued content').onclick();
+ assert.equal(button(b.w,'Add reviewed issue to queue').disabled,true);assert.equal(b.w.document.querySelector('#issue-approval').checked,false);
+ a.dom.window.close();b.dom.window.close();
+});
