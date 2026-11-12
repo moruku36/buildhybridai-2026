@@ -56,3 +56,15 @@ On November 12, 2026, the isolated local QA origin was checked at commit 0c9ce0a
 After Review queued content and checking confirmation, editing completion criteria cleared confirmation and disabled Add. Reviewing and confirming again added exactly one unexecuted queued task. Its initial route was local with cloud permission false. The UI remained AI not connected and at zero of six session attempts. Edit execution displayed the complete title, brief and revisionFeedback with permission still off.
 
 This real-browser check stopped after intake, queue insertion and consent-content inspection. The subsequent generation → result review flow is covered only by the 50-test offline mocked suite for this change. No inference, Firebase initialization, permission change or download occurred. The isolated QA tab was closed afterward.
+
+## Public issue intake → live cloud draft → approval (Brave)
+
+On November 12, 2026, the existing main local Brave board reused its registered development App Check setup for one live cloud attempt. A synthetic issue titled "Synthetic issue: paper-plane scorecard" requested a short implementation plan for a fictional workshop scorecard. Constraints excluded accounts, network services, personal data and code execution, and requested fewer than 200 words. Completion criteria covered recording three flight distances in metres, input validation and a manual test.
+
+The P1 task passed through Prepare public issue, full-content review and explicit confirmation. It was initially queued local-only with cloud permission false. Edit execution then displayed the full content before the user selected cloud-only and explicitly enabled permission. Start queue was used once.
+
+The response had source in_cloud and timestamp 2026-11-12T04:00:20.181Z. The UI showed Cloud verified / Device unverified and one of six session attempts. The short implementation-instruction draft covered three-distance input, numeric checks, manual testing and uncertainties. It proposed a 0–100 metre range while identifying the upper bound as unresolved; it did not claim to have implemented or executed the plan. The result was read and approved, moving the task to Done.
+
+The next existing P2 hybrid task had cloud permission false and stopped at the permission gate before sending. An attempted Pause interaction occurred after generation and did not execute; the observed stop was due to the permission gate, not a verified pause action.
+
+This extends the earlier intake-only browser check to one real cloud-response-and-review flow. No additional AI attempt, new token generation/registration, configuration or billing change, device inference, GPU operation or download occurred. The QA tab was closed afterward and the existing main board was retained. Production attestation, device inference and general autonomous implementation remain unverified or outside scope.
