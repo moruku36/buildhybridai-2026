@@ -25,7 +25,7 @@ This first slice is **not a Rust-rendered UI**: DOM rendering remains JavaScript
 ## Safety and failure design
 
 - Default task route is device-only, with no cloud fallback.
-- Each hybrid/cloud task requires explicit permission to transmit its title and brief to Google via Firebase AI Logic. Never paste sensitive information.
+- Each hybrid/cloud task requires explicit permission to transmit its title, brief and revision feedback to Google via Firebase AI Logic. Never paste sensitive information.
 - One in-flight call per tab; maximum six calls per page session, <=1200 output tokens requested per cloud call (on-device output has no equivalent configured cap; displayed output is truncated to 20,000 characters). This is **not a monetary budget** or a cross-tab/global quota. Configure Firebase quotas before live use.
 - Pause stops after the current call. It does not cancel or refund an in-flight request. No automatic retry after failures.
 - Reloaded running tasks become blocked. No blind duplicate call.

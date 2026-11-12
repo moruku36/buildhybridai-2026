@@ -91,3 +91,23 @@ test('sending a review back pauses after the current request and requires explic
  saved=JSON.parse(w.localStorage.getItem('relay-board-v1'));assert.equal(saved[0].state,'review');
  dom.window.close();
 });
+
+test('revision feedback persists, resets cloud permission and reaches only the explicit next run',async()=>{
+ const task={id:'review',title:'Synthetic task',brief:'Public test',priority:1,sequence:0,state:'review',mode:'cloud',cloudAllowed:true,result:{text:'Old draft',source:'in_cloud',createdAt:'2026-11-12'}};
+ const {dom,w}=await boot([task]);let calls=0,received;
+ w.onGenerate=async t=>{calls++;received=t.feedback;return {text:'Revised draft',source:'in_cloud',createdAt:'2026-11-12'}};
+ button(w,'Read result').onclick();w.document.querySelector('#revision-feedback').value='Use three concise steps.';
+ button(w,'Close').onclick();assert.equal(JSON.parse(w.localStorage.getItem('relay-board-v1'))[0].feedback,undefined);
+ button(w,'Read result').onclick();w.document.querySelector('#revision-feedback').value='Use three concise steps.';
+ button(w,'Send back').onclick();
+ let saved=JSON.parse(w.localStorage.getItem('relay-board-v1'))[0];
+ assert.equal(saved.feedback,'Use three concise steps.');assert.equal(saved.cloudAllowed,false);assert.equal(saved.state,'queued');assert.equal(calls,0);
+ await button(w,'Start queue').onclick();assert.equal(calls,0);
+ const reload=await boot([saved]);assert.match(reload.w.document.querySelector('.card').textContent,/Use three concise steps/);reload.dom.window.close();
+ button(w,'Edit execution').onclick();w.document.querySelector('input[name="executionConsent"]').checked=true;
+ button(w,'Save execution settings').onclick();assert.equal(calls,0);
+ await button(w,'Start queue').onclick();assert.equal(calls,1);assert.equal(received,'Use three concise steps.');
+ button(w,'Read result').onclick();assert.equal(w.document.querySelector('#revision-feedback').value,'Use three concise steps.');
+ button(w,'Approve result').onclick();saved=JSON.parse(w.localStorage.getItem('relay-board-v1'))[0];assert.equal(saved.state,'done');
+ dom.window.close();
+});
