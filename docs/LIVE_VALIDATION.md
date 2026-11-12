@@ -78,3 +78,13 @@ The explicit development-only TEST_FIXTURE was created at 2026-11-12T07:13:28.71
 A second edit at 2026-11-12T07:14:13.163Z removed approval again, returned the result to review and hid the handoff button. After separate reapproval, Show approved handoff text displayed the latest text in a read-only field: "TEST_FIXTURE: second local edit after approval. Use centimetres explicitly. No AI." The UI identified the original source as TEST_FIXTURE, labeled the human-edited/reapproved version and stated that nothing was sent, downloaded or executed.
 
 No external transmission, AI request, GPU operation, clipboard write or download occurred. This real-browser evidence covers the JavaScript review flow only. Rust tests, WASM build and transition parity were verified separately on Mac. The normal Windows WASM file-transfer path stopped because extended-attribute support was unavailable; no alternate transfer was used. The QA tab was closed afterward. PR #1 remains a proposed change pending owner approval, not a merged release.
+
+## PR #2 approved handoff packet UI verification (Brave)
+
+On November 12, 2026, Windows Brave checked commit c3f6e8f9 on the isolated loopback QA origin without Firebase configuration or WASM. The JavaScript preview core was used; Start queue stayed disabled and session attempts stayed at zero.
+
+An existing approved TEST_FIXTURE exposed a read-only packet with format relay-approved-handoff-v1, stored request title/brief/priority, separate original and approved text, source/time metadata and the warning that content review is not execution authorization. Its issueContext was null because this fixture was not created through issue intake. The packet explicitly identified TEST_FIXTURE as synthetic, with no inference.
+
+A local edit saved at 2026-11-12T07:41:03.116Z changed the text to "TEST_FIXTURE: PR2 packet QA revision. Keep three fictional distances in metres." Approval became required and both handoff buttons disappeared. After reapproval at 2026-11-12T07:41:13.841Z, a packet assembled at 2026-11-12T07:41:15.094Z contained the latest approvedText separately from the unchanged originalText and showed the updated approval timestamp. The UI also stated that a copied snapshot is not synchronized or revoked after later edits.
+
+No external transmission, AI request, clipboard write or download occurred. This browser check covers fixture packet display and reapproval; structured issue-field extraction remains supported by the offline tests, not this browser run. The QA tab was closed afterward. PR #2 remains unmerged pending owner approval.

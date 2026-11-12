@@ -106,3 +106,23 @@ The fixture supports local editing, approval and manual handoff only in that ena
 Production builds remove the add button, fixture factory and synthetic example text even if the opt-in environment variable is present. Minimal marker/validation handling remains so persisted test data is not misrepresented or discarded. Do not use the main board's origin for QA. Start/initialize/verify controls are not needed for this fixture.
 
 Validation: 58 offline tests passed and a production build with VITE_REVIEW_FIXTURE=true passed. Bundle inspection confirmed absence of the fixture button, factory identifier and example text. DOM coverage includes explicit add, deduplication, local edit/reapproval, zero inference evidence/attempts, non-loopback denial and read-only production restoration. No real AI or browser download was used.
+
+## Approved context-and-result handoff packet
+
+For approved AI drafts, **Show approved handoff packet** complements the existing body-only handoff. It displays read-only JSON with format `relay-approved-handoff-v1`: the stored task ID/title/priority/brief, recognizable reviewed issue goal/constraints/completion criteria, original text, current approved text, original source/creation time, human-edit time, approval time and snapshot assembly time.
+
+The exact stored brief is always included. Structured issue context is extracted only from Relay's own canonical issue-intake brief format; ordinary or unrecognized briefs retain their exact text and have null structured context. The raw pasted issue, ignored fields and unstored source URL are not reconstructed. This is not a record of every historical edit.
+
+Approval timestamps are now recorded for new approvals, including unedited results. Changed local edits clear that approval and require a new review. Existing approved records without a known timestamp remain usable with null and an explicit unknown-time explanation; no timestamp is invented. Original inference source is distinguished from human editing. Development fixtures remain TEST_FIXTURE and explicitly state that no inference occurred.
+
+The packet is available only for the current approved version and uses the existing lock/stale protection. It is an unsynchronized local snapshot; later edits cannot retract a manually copied snapshot. Displaying it does not persist a new artifact, call AI, write the clipboard, download or transmit anything. Inspect all included context before copying and keep secrets/personal data out.
+
+The JSON and UI explicitly state that task text, third-party issue content and AI output are untrusted data. Approval is content review only, not authorization for downstream code execution, repository changes or data transmission.
+
+Validation: a 61-test offline suite exercised the change; 60 passed initially and a new test fixture lacked its required sequence field. After correcting that test-only fixture, both packet unit tests passed on targeted rerun. The new DOM packet flow, existing edit/rollback/stale flows and all other tests had passed. Final targeted packet tests and production build passed after the explanatory-text update. No Rust/WASM source change or rebuild, real AI, GPU, download test or new dependency was needed. Browser UI QA remains separate; the proposal requires owner approval before merging.
+
+### Windows setup constraint
+
+Pulling source does not update the ignored `public/relay_core.wasm`. After a core change, the supported full-build sequence is `cargo test --manifest-path core/Cargo.toml`, `npm run build:core`, then `npm run build`, with the wasm32-unknown-unknown target already installed. Verify the new WASM in both public and dist before full queue use. The loader rejects a pre-edit-event core and disables Start queue.
+
+A Rust-less Windows installation can still inspect the preview/review UI but cannot rebuild the core itself. Use a correctly built, version-matched binary through the supported transfer workflow, or obtain approval before installing a Windows Rust toolchain. A blocked transfer is not resolved by source pull alone. No prebuilt release artifact is currently provided by this change. Existing Firebase configuration must not be overwritten merely to perform local UI checks.
