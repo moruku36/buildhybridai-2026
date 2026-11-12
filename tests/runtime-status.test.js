@@ -146,9 +146,14 @@ test('stale queued edits cannot overwrite another tab; orphaned running state re
  await button(a.w,'Change priority').onclick();await button(b.w,'Change priority').onclick();
  assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].priority,2);
  assert.match(b.w.document.querySelector('.notice').textContent,/Board changed/);
+ await button(b.w,'Change priority').onclick();
+ assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].priority,3);
+ assert.equal(b.w.document.querySelector('.notice').textContent,'Board changes saved.');
  storage.setItem('relay-board-v1',JSON.stringify([{...t,state:'running'}]));
  const c=await boot(undefined,{locks,storage});
  assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].state,'blocked');
+ assert.match(c.w.document.querySelector('.notice').textContent,/previous request may have consumed quota/i);
+ await button(c.w,'Return to queue').onclick();
  assert.match(c.w.document.querySelector('.notice').textContent,/previous request may have consumed quota/i);
  a.dom.window.close();b.dom.window.close();c.dom.window.close();
 });

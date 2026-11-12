@@ -16,18 +16,19 @@ try{storageSnapshot=localStorage.getItem(key);tasks=validateTasks(JSON.parse(sto
 let active=false,stop=false,calls=0,selected=null,notice=storageError,api=null;
 const $=s=>document.querySelector(s);
 const node=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
+const STALE_BOARD_NOTICE="Board changed in another tab. Refreshed without saving; inspect it and retry explicitly.";
 function checkSnapshot(){
  const current=localStorage.getItem(key);
  if(current!==storageSnapshot){
   tasks=validateTasks(JSON.parse(current||'null')||structuredClone(seed));storageSnapshot=current;
   for(const dialog of document.querySelectorAll('dialog'))dialog.remove();
-  throw Error('Board changed in another tab. Refreshed without saving; inspect it and retry explicitly.');
+  throw Error(STALE_BOARD_NOTICE);
  }
 }
 function persist(){
  if(!lockHeld)throw Error('Board lock required. No changes saved.');
  checkSnapshot();
- try{const value=JSON.stringify(tasks);localStorage.setItem(key,value);storageSnapshot=value;}
+ try{const value=JSON.stringify(tasks);localStorage.setItem(key,value);storageSnapshot=value;if(notice===STALE_BOARD_NOTICE)notice='Board changes saved.';}
  catch{throw Error('Storage is unavailable or full. No further execution; export your board before closing.');}
 }
 async function withBoardWrite(action){

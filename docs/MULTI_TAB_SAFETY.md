@@ -28,3 +28,11 @@ The full offline suite passed 31 tests after integration; a final additional fai
 Preview is immediate and has no deliberate holding delay, so two UI clicks cannot reliably demonstrate lock contention. Use the shared-lock automated test for that case; there is no published test backdoor.
 
 For a manual stale-tab check, use two tabs on the same separate test origin with a disposable sample board, not the user's existing board. Do not initialize Firebase, verify App Check or start the queue. Change a sample task's priority in tab A, then attempt a priority change in tab B: B must refresh and reject the stale operation. A deliberate second operation in B should succeed. This validates stale-write UX, not a live in-flight lock or crash guarantee.
+
+## Real Brave stale-write check
+
+A later manual check used two Brave tabs on an isolated test-board origin, without initializing AI or making an inference request. Tab A changed a sample priority P1 to P2. Tab B's stale P1 action was refused and refreshed to P2 without overwriting it. An explicit retry in B saved P3, and reloading A showed P3.
+
+That check exposed a stale conflict notice remaining after the successful retry. Successful persistence now replaces only that exact stale-board notice with "Board changes saved." Other warnings and inference-result notices are preserved. The affected lock/DOM regressions and production build passed after this minimal fix.
+
+Real held-lock contention and browser-crash behavior were not exercised in this UI check; those remain mock/spec-based coverage as described above.
