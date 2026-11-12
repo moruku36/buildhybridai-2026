@@ -299,7 +299,7 @@ test('human edit cancellation, reapproval, handoff and history preserve original
  button(w,'Read result').onclick();button(w,'Edit result locally').onclick();w.document.querySelector('#human-result-text').value='<img src=x> Human version';await button(w,'Save local edit').onclick();
  let t=JSON.parse(w.localStorage.getItem('relay-board-v1'))[0];assert.equal(t.state,'review');assert.equal(t.result.text,'Original draft');assert.equal(t.result.humanEdit.approvedAt,undefined);
  button(w,'Read result').onclick();assert.equal(button(w,'Show approved handoff text'),undefined);
- assert.match(w.document.querySelector('dialog').textContent,/Human-edited version; original inference source/);assert.equal(w.document.querySelector('img'),null);
+ assert.match(w.document.querySelector('dialog').textContent,/Human-edited version; original source/);assert.equal(w.document.querySelector('img'),null);
  await button(w,'Approve result').onclick();button(w,'Read result').onclick();await button(w,'Show approved handoff text').onclick();
  const area=w.document.querySelector('#approved-handoff-text');assert.equal(area.readOnly,true);assert.equal(area.value,'<img src=x> Human version');button(w,'Close').onclick();
  button(w,'Read result').onclick();button(w,'Edit result locally').onclick();w.document.querySelector('#human-result-text').value='Second edit';await button(w,'Save local edit').onclick();
