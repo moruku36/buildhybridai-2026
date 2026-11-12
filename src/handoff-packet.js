@@ -1,3 +1,4 @@
+import {criteriaSummary} from './criteria-review.js';
 import {handoffText} from './review-edit.js';
 import {ISSUE_BRIEF_PREFIX} from './issue-intake.js';
 const dateOrNull=value=>typeof value==='string'&&value.length<=64&&Number.isFinite(Date.parse(value))?value:null;
@@ -18,7 +19,7 @@ export function handoffPacket(task,assembledAt=new Date().toISOString()){
   provenance:{originalSource:r.source,originalCreatedAt:dateOrNull(r.createdAt),humanEdited:Boolean(r.humanEdit),humanEditedAt:dateOrNull(r.humanEdit?.editedAt),
    approvedAt,approvalEvidence:approvedAt?'Current version is approved in this local board.':'Current version is approved in this local board; approval timestamp was not recorded.',
    inferenceNote:r.source==='TEST_FIXTURE'?'Synthetic QA fixture; no AI inference occurred.':'Source describes the original result, not human edits or a fresh inference.'},
-  originalText:r.text,approvedText,
+  originalText:r.text,approvedText,draftContentReview:criteriaSummary(task),
   limits:'Only the current approved version is represented. This snapshot is not synchronized or revoked after later edits. Local storage is unencrypted. Original/approval times may be unknown for older data.'
  },null,2);
 }

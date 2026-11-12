@@ -270,6 +270,10 @@ test('issue intake invalidates review on edits, adds once without AI, then uses 
  assert.equal(w.aiModuleLoads,undefined);await button(w,'Start queue').onclick();
  saved=JSON.parse(w.localStorage.getItem('relay-board-v1'));assert.equal(saved[0].state,'review');
  button(w,'Read result').onclick();await button(w,'Approve result').onclick();
+ assert.equal(JSON.parse(w.localStorage.getItem('relay-board-v1'))[0].state,'review');
+ for(const select of w.document.querySelectorAll('select[id^="criterion-"]'))select.value='addressed';
+ await button(w,'Approve result').onclick();
+ assert.equal(JSON.parse(w.localStorage.getItem('relay-board-v1'))[0].result.criteriaReview.statuses[0],'addressed');
  assert.equal(JSON.parse(w.localStorage.getItem('relay-board-v1'))[0].state,'done');dom.window.close();
 });
 test('issue intake rolls back unsaved in-memory addition and retry adds exactly once',async()=>{
@@ -338,4 +342,21 @@ test('approved packet displays exact context and current version, then becomes u
  area=w.document.querySelector('#approved-handoff-packet');p=JSON.parse(area.value);
  assert.equal(p.approvedText,'<b>Human plan</b>');assert.equal(p.originalText,'Original draft');assert.ok(p.provenance.approvedAt);assert.equal(w.document.querySelector('dialog b'),null);assert.equal(w.aiModuleLoads,undefined);
  dom.window.close();
+});
+
+test('criteria approval rollback and stale tab protection preserve saved board',async()=>{
+ const {prepareIssueTask}=await import('../src/issue-intake.js');
+ const task={...prepareIssueTask({title:'Synthetic',goal:'Plan',constraints:'None',acceptanceCriteria:'Describe checks',priority:1}),id:'criterion-task',sequence:0,state:'review',mode:'local',cloudAllowed:false,result:{text:'Draft',source:'in_cloud'}};
+ const storage=sharedStorage();const {dom,w}=await boot([task],{storage});
+ button(w,'Read result').onclick();w.document.querySelector('#criterion-0').value='addressed';
+ const set=storage.setItem;storage.setItem=()=>{throw Error('Quota test')};await button(w,'Approve result').onclick();
+ assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].result.criteriaReview,undefined);
+ storage.setItem=set;await button(w,'Approve result').onclick();
+ assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].state,'done');
+ dom.window.close();
+ const other=await boot([task],{storage});button(other.w,'Read result').onclick();other.w.document.querySelector('#criterion-0').value='addressed';
+ const external=JSON.parse(storage.getItem('relay-board-v1'));external[0].title='Other tab title';storage.setItem('relay-board-v1',JSON.stringify(external));
+ await button(other.w,'Approve result').onclick();
+ assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].title,'Other tab title');
+ assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].result.criteriaReview,undefined);other.dom.window.close();
 });

@@ -126,3 +126,16 @@ Validation: a 61-test offline suite exercised the change; 60 passed initially an
 Pulling source does not update the ignored `public/relay_core.wasm`. After a core change, the supported full-build sequence is `cargo test --manifest-path core/Cargo.toml`, `npm run build:core`, then `npm run build`, with the wasm32-unknown-unknown target already installed. Verify the new WASM in both public and dist before full queue use. The loader rejects a pre-edit-event core and disables Start queue.
 
 A Rust-less Windows installation can still inspect the preview/review UI but cannot rebuild the core itself. Use a correctly built, version-matched binary through the supported transfer workflow, or obtain approval before installing a Windows Rust toolchain. A blocked transfer is not resolved by source pull alone. No prebuilt release artifact is currently provided by this change. Existing Firebase configuration must not be overwritten merely to perform local UI checks.
+
+
+## Human assessment of Issue draft content
+
+For Issue-derived tasks, each nonblank line in the stored completion criteria is shown during result review. The existing 800-character criteria limit bounds this list. Select **Addressed in draft**, **Not addressed**, or **Unverified**. These are human assessments of the instruction draft, not proof that the issue was implemented or tests ran.
+
+Approval with any missing/unverified item requires an explicit acknowledgment and a nonblank reason (maximum 500 characters). The assessment is saved with the approved result under the existing board lock. Failed persistence rolls back the result; stale tabs cannot overwrite the saved board. Closing without approval does not save these selections.
+
+Local result edits clear the assessment. Regeneration creates a fresh result. Changed criteria invalidate old assessments; legacy approvals show unverified items and no assessment timestamp. No past assessment is invented. The approved handoff packet includes `draftContentReview`, current item statuses and any override reason. It remains a snapshot, never authorization to execute.
+
+Assessments and override reasons remain in localStorage and the manually displayed handoff packet only; they are not appended to AI prompts. No AI request, Rust change, download, external send, or implementation execution is added by this feature.
+
+Offline validation: the initial full 64-test run passed 63 tests and exposed one existing integration test that needed to perform the new explicit review gate. After updating that expectation and adding save-failure/stale-tab coverage, the affected 23 tests passed and the production build succeeded. Real-browser review of this feature has not yet been performed.
