@@ -27,10 +27,33 @@ test('synthetic UI example edits and reapproves without inference, restores read
  btn(w,'Read result').onclick();assert.equal(btn(w,'Send back'),undefined);btn(w,'Edit result locally').onclick();
  w.document.querySelector('#human-result-text').value='Synthetic human edit, not AI';await btn(w,'Save local edit').onclick();
  btn(w,'Read result').onclick();await btn(w,'Approve result').onclick();
+ assert.equal(JSON.parse(w.localStorage.getItem('relay-board-v1'))[0].state,'review');
+ assert.match(w.document.querySelector('dialog [role=alert]').textContent,/explicit acknowledgment and a reason/);
+ assert.equal(w.document.querySelectorAll('select[id^="criterion-"]').length,2);
+ w.document.querySelector('#criterion-0').value='addressed';
+ w.document.querySelector('#criteria-override').checked=true;w.document.querySelector('#criteria-override-reason').value='Synthetic test: manual check remains unspecified';
+ await btn(w,'Approve result').onclick();
  saved=JSON.parse(w.localStorage.getItem('relay-board-v1'));assert.equal(saved[0].state,'done');assert.equal(saved[0].result.humanEdit.text,'Synthetic human edit, not AI');assert.equal(fetches(),1);
+ assert.match(w.document.querySelector('.notice').textContent,/Result approved and saved locally/);
+ assert.doesNotMatch(w.document.querySelector('.notice').textContent,/require explicit/);
+ assert.equal(saved[0].result.criteriaReview.statuses[1],'unverified');
+ btn(w,'Read result').onclick();btn(w,'Show approved handoff packet').onclick();
+ const packet=JSON.parse(w.document.querySelector('#approved-handoff-packet').value);
+ assert.equal(packet.provenance.originalSource,'TEST_FIXTURE');assert.equal(packet.draftContentReview.items.length,2);
+ assert.match(packet.request.issueContext.goal,/Synthetic QA/);
+ btn(w,'Close').onclick();btn(w,'Read result').onclick();btn(w,'Edit result locally').onclick();
+ w.document.querySelector('#human-result-text').value='Second synthetic edit';await btn(w,'Save local edit').onclick();
+ assert.equal(JSON.parse(w.localStorage.getItem('relay-board-v1'))[0].result.criteriaReview,undefined);
  const prod=await boot({dev:false,saved});assert.equal(btn(prod.w,'Add synthetic review example (no AI)'),undefined);
  btn(prod.w,'Read result').onclick();assert.equal(btn(prod.w,'Edit result locally'),undefined);assert.equal(btn(prod.w,'Show approved handoff text'),undefined);assert.match(prod.w.document.querySelector('dialog').textContent,/TEST_FIXTURE/);
  assert.equal(JSON.parse(prod.w.localStorage.getItem('relay-board-v1'))[0].result.humanEdit.text,'Synthetic human edit, not AI');
  const remote=await boot({host:'example.com'});assert.equal(btn(remote.w,'Add synthetic review example (no AI)'),undefined);
  dom.window.close();prod.dom.window.close();remote.dom.window.close();
+});
+
+test('v2 explicit insertion preserves v1 data and deduplicates only v2',async()=>{
+ const old={id:'relay-review-fixture-v1',title:'Existing synthetic example',brief:'Original saved fixture',kind:'review-fixture',priority:3,sequence:0,state:'review',mode:'local',cloudAllowed:false,result:{source:'TEST_FIXTURE',text:'Do not overwrite'}};
+ const {w,dom}=await boot({saved:[old]});
+ await btn(w,'Add synthetic review example (no AI)').onclick();await btn(w,'Add synthetic review example (no AI)').onclick();
+ const saved=JSON.parse(w.localStorage.getItem('relay-board-v1'));assert.equal(saved.length,2);assert.deepEqual(saved[0],old);assert.equal(saved[1].id,'relay-review-fixture-v2');dom.window.close();
 });

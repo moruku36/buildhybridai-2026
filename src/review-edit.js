@@ -7,7 +7,7 @@ export function saveHumanEdit(task,text,now=new Date().toISOString()){
  if(!canEditResult(task))throw Error('Only AI draft results can be edited.');
  if(typeof text!=='string'||!text.trim()||text.length>20000)throw Error('Use 1–20,000 characters of nonblank text.');
  if(text===reviewedText(task))return false;
- task.result.humanEdit={text,editedAt:now};delete task.result.reviewApprovedAt;return true;
+ task.result.humanEdit={text,editedAt:now};delete task.result.reviewApprovedAt;delete task.result.criteriaReview;return true;
 }
 export function handoffText(task){
  if(!canEditResult(task)||task.state!=='done'||(task.result.humanEdit&&!task.result.humanEdit.approvedAt))throw Error('Approve the current version before handoff.');

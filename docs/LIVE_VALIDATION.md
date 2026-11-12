@@ -88,3 +88,14 @@ An existing approved TEST_FIXTURE exposed a read-only packet with format relay-a
 A local edit saved at 2026-11-12T07:41:03.116Z changed the text to "TEST_FIXTURE: PR2 packet QA revision. Keep three fictional distances in metres." Approval became required and both handoff buttons disappeared. After reapproval at 2026-11-12T07:41:13.841Z, a packet assembled at 2026-11-12T07:41:15.094Z contained the latest approvedText separately from the unchanged originalText and showed the updated approval timestamp. The UI also stated that a copied snapshot is not synchronized or revoked after later edits.
 
 No external transmission, AI request, clipboard write or download occurred. This browser check covers fixture packet display and reapproval; structured issue-field extraction remains supported by the offline tests, not this browser run. The QA tab was closed afterward. PR #2 remains unmerged pending owner approval.
+
+
+## Issue draft-content review: Brave UI validation (2026-11-12)
+
+Validated the PR3 flow on an isolated loopback QA origin with JavaScript previewCore, no Firebase configuration and no WASM execution. The v2 TEST_FIXTURE original was created at 08:17:24.446Z. An unverified approval was refused; one missing and one unverified condition could be approved only with the explicit exception checkbox and a reason, reflected in the handoff packet at 08:18:16.390Z.
+
+On commit 12d817db, the approved synthetic text was edited locally at 08:24:17.234Z to describe fictional distances in metres and a manual input-check proposal. It explicitly stated that no tests or implementation had been performed. Both assessments reset to Unverified, the exception checkbox was off, the reason was empty and approval was required again.
+
+Approve without assessment showed the refusal inside the review dialog: “Unmet or unverified criteria require explicit acknowledgment and a reason (1–500 characters).” After selecting Addressed in draft for both conditions and approving, the previous error was replaced by “Result approved and saved locally. Content review only; no work executed.” The displayed packet contained two addressed items, null overrideReason, reviewedAt 2026-11-12T08:24:29.484Z and original source TEST_FIXTURE.
+
+Start remained disabled and session attempts stayed at zero. No AI, external send, clipboard write or download occurred. Save-failure rollback and stale-tab rejection remain offline-test evidence, not claims from this browser run. These assessments concern draft content, not completed implementation or executed tests.
