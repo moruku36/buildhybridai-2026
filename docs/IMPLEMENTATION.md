@@ -77,6 +77,10 @@ After approving the current AI draft, inspect **Show approved handoff packet** a
 
 A first-focus **Skip to main content** link, named review/settings/intake dialogs, explicit input/control focus outlines and public-issue status announcements improve keyboard and assistive-technology navigation. These are source-level UI improvements, not a verified accessibility pass. Native dialog interaction, focus restoration after rerender and screen-reader behavior still need real-browser acceptance. See [changes and verification limits](KEYBOARD_ACCESSIBILITY.md).
 
+## Narrow-screen review layout
+
+Toolbar controls can wrap at every width, long task/status/review text can break within its container, and mobile dialogs use less padding. Local editing and approved handoff text areas start taller for inspection and manual copying. The five-state board retains its own horizontal scroll; no workflow state or action is hidden. These CSS-only changes do not alter execution, consent, approval or downloads. Real-browser layout and zoom acceptance remain unverified. See [responsive changes and verification limits](RESPONSIVE_REVIEW.md).
+
 ## Original-draft execution receipts
 
 New successful AI drafts record their requested route, SDK-reported actual source and whole-operation elapsed time. Review, sent-back history and approved handoff preserve this original-run evidence separately from human edits. Legacy results, fixtures and local checks do not acquire invented evidence. These local, unsigned observations do not prove runtime availability after reload or estimate charges. See [execution receipt behavior and validation](EXECUTION_RECEIPTS.md).
