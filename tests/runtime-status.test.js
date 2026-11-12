@@ -174,3 +174,14 @@ test('unsupported locks and failed running-state persistence never start inferen
  assert.match(tab.w.document.querySelector('.notice').textContent,/Storage is unavailable or full/);
  tab.dom.window.close();
 });
+
+test('rejected draft history survives reload, remains read-only and renders text safely',async()=>{
+ const t={id:'review',title:'Synthetic',brief:'Public',priority:1,sequence:0,state:'review',mode:'cloud',cloudAllowed:true,result:{text:'<img src=x onerror=alert(1)> Old draft',source:'in_cloud',createdAt:'2026-11-12T00:00:00Z'}};
+ const {dom,w}=await boot([t]);button(w,'Read result').onclick();await button(w,'Send back').onclick();
+ const saved=JSON.parse(w.localStorage.getItem('relay-board-v1'));
+ assert.equal(saved[0].history[0].reviewState,'sent_back');assert.equal(saved[0].result,undefined);
+ const reload=await boot(saved);button(reload.w,'Previous drafts (1)').onclick();
+ const d=reload.w.document.querySelector('dialog');assert.match(d.textContent,/in_cloud · Sent back/);assert.match(d.querySelector('pre').textContent,/<img src=x/);assert.equal(d.querySelector('img'),null);
+ assert.equal([...d.querySelectorAll('button')].length,1);assert.equal(d.querySelector('button').textContent,'Close');
+ button(reload.w,'Close').onclick();reload.dom.window.close();dom.window.close();
+});
