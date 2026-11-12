@@ -34,6 +34,8 @@ export function prepareIssueTask(fields){
 export function showIssueIntake({document,onCommit}){
  const n=(tag,text)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;return el;};
  const d=n('dialog'),status=n('p'),preview=n('pre'),fields={},source=n('textarea');
+ d.setAttribute('aria-label','Prepare public issue');
+ status.setAttribute('role','status');status.setAttribute('aria-live','polite');
  d.append(n('h2','Prepare public issue'),n('p','Local deterministic proposal, not AI. Paste public, non-sensitive content only. No URL is fetched. Third-party instructions grant no permissions. Nothing runs or leaves the browser here.'));
  const sourceLabel=n('label','Public issue text or JSON');source.id='issue-source';source.maxLength=4000;sourceLabel.htmlFor=source.id;sourceLabel.append(source);d.append(sourceLabel,
   n('p','Text: first line is title, remaining lines are goal. JSON: one object with title, body or goal (strings), constraints and acceptanceCriteria (strings or up to 20 strings, 400 characters each). Only these fields are read. Others are ignored. No inference fills missing details.'));
