@@ -47,6 +47,8 @@ The official rules require, among other things: [2]
 
 **Current repository status:** the Relay workboard implementation is now included. See [setup and architecture](docs/IMPLEMENTATION.md), [initial validation](docs/VERIFICATION.md), and [Rust/WASM follow-up validation](docs/MAC_VALIDATION.md). A first Windows/Brave cloud inference and review flow passed; [live validation and limits](docs/LIVE_VALIDATION.md) records the failed on-device attempt. Device inference, hybrid fallback and broader browser QA remain unverified. No demo, contest submission, or open-source license has been added. License selection requires the owner's decision; public visibility alone does not make a project open source.
 
+**Relay architecture (November 13, 2026):** [Canonical overall design](docs/ARCHITECTURE.md) separates implemented behavior from unimplemented paper-inspired payload/preflight proposals. DLite was reviewed as HTML text; the far-edge paper review is **abstract-only, not full text**. This documentation adds no feature, runtime validation or performance claim. Delivery priority remains **app usage guide → device/hybrid validation → submission preparation last**; implementation/validation wait remains in place.
+
 ## Judging
 
 Projects are assessed with equal weight across four criteria: [1][2]
