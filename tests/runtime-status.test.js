@@ -18,7 +18,7 @@ const bundle=await build({entryPoints:['src/main.js'],bundle:true,write:false,fo
  export function initializeConnection(){return {debug:false}}
  export async function verifyAppCheck(){return {verified:true}}
  export function prepareModel(){return {}}
- export async function generateDraft(task){if(task.mode==='local')throw Error('Local LanguageModel API not available in this environment');return {text:'Synthetic test draft',source:'in_cloud',createdAt:'2026-11-12T00:00:00Z'}}
+ export async function generateDraft(task){if(globalThis.onGenerate)return globalThis.onGenerate(task);if(task.mode==='local')throw Error('Local LanguageModel API not available in this environment');return {text:'Synthetic test draft',source:'in_cloud',createdAt:'2026-11-12T00:00:00Z'}}
  `}));
 }}]});
 const button=(w,text)=>[...w.document.querySelectorAll('button')].find(b=>b.textContent===text);
@@ -53,4 +53,41 @@ test('cloud success updates banner through approval; App Check, failure and relo
  const reload=await boot(saved);await button(reload.w,'Initialize connection').onclick();
  assert.match(reload.w.document.querySelector('.status').textContent,/Cloud unverified · Device unverified/);
  reload.dom.window.close();dom.window.close();
+});
+
+test('paused execution edits repair consent and blocked routes without running or losing data',async()=>{
+ const tasks=[{id:'fix',title:'Synthetic blocked task',brief:'Keep this brief',priority:2,sequence:0,state:'blocked',mode:'local',cloudAllowed:false,error:'Previous device failure'}];
+ const {dom,w}=await boot(tasks);let requests=0;w.onGenerate=async()=>{requests++;throw Error('Should not run')};
+ button(w,'Edit execution').onclick();let d=w.document.querySelector('dialog');
+ d.querySelector('select').value='cloud';d.querySelector('select').onchange();d.querySelector('input').checked=true;
+ button(w,'Cancel').onclick();assert.equal(JSON.parse(w.localStorage.getItem('relay-board-v1'))[0].mode,'local');
+ button(w,'Edit execution').onclick();d=w.document.querySelector('dialog');
+ d.querySelector('select').value='hybrid';d.querySelector('select').onchange();d.querySelector('input').checked=true;
+ button(w,'Save execution settings').onclick();
+ let saved=JSON.parse(w.localStorage.getItem('relay-board-v1'))[0];
+ assert.equal(saved.mode,'hybrid');assert.equal(saved.cloudAllowed,true);assert.equal(saved.state,'blocked');assert.equal(saved.brief,'Keep this brief');assert.equal(requests,0);
+ button(w,'Return to queue').onclick();assert.equal(requests,0);
+ button(w,'Edit execution').onclick();d=w.document.querySelector('dialog');d.querySelector('input').checked=false;
+ button(w,'Save execution settings').onclick();await button(w,'Start queue').onclick();assert.equal(requests,0);
+ assert.match(w.document.querySelector('.notice').textContent,/cloud permission/);
+ button(w,'Edit execution').onclick();d=w.document.querySelector('dialog');d.querySelector('select').value='local';d.querySelector('select').onchange();assert.equal(d.querySelector('input').checked,false);assert.equal(d.querySelector('input').disabled,true);
+ button(w,'Save execution settings').onclick();saved=JSON.parse(w.localStorage.getItem('relay-board-v1'))[0];assert.equal(saved.mode,'local');assert.equal(saved.cloudAllowed,false);
+ dom.window.close();
+});
+test('sending a review back pauses after the current request and requires explicit restart',async()=>{
+ const base={title:'Synthetic task',brief:'Public test',priority:1,mode:'cloud',cloudAllowed:true};
+ const {dom,w}=await boot([{...base,id:'review',sequence:0,state:'review',result:{text:'Existing draft',source:'in_cloud',createdAt:'2026-11-12'}},{...base,id:'running',sequence:1,state:'queued'}]);
+ let finish,calls=0;w.onGenerate=()=>{calls++;return new Promise(resolve=>{finish=resolve})};
+ const running=button(w,'Start queue').onclick();
+ for(let n=0;n<10&&!finish;n++)await new Promise(resolve=>setTimeout(resolve,0));
+ assert.equal(calls,1);
+ assert.equal([...w.document.querySelectorAll('button')].filter(b=>b.textContent==='Edit execution').every(b=>b.disabled),true);
+ button(w,'Read result').onclick();button(w,'Send back').onclick();
+ finish({text:'Second draft',source:'in_cloud',createdAt:'2026-11-12'});await running;
+ assert.match(w.document.querySelector('.notice').textContent,/Queue paused; press Start queue/);
+ assert.equal(calls,1);let saved=JSON.parse(w.localStorage.getItem('relay-board-v1'));assert.equal(saved[0].state,'queued');assert.equal(saved[0].result,undefined);assert.equal(saved[1].state,'review');
+ w.onGenerate=async()=>{calls++;return {text:'Explicit re-draft',source:'in_cloud',createdAt:'2026-11-12'}};
+ await button(w,'Start queue').onclick();assert.equal(calls,2);
+ saved=JSON.parse(w.localStorage.getItem('relay-board-v1'));assert.equal(saved[0].state,'review');
+ dom.window.close();
 });
