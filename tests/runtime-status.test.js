@@ -6,7 +6,7 @@ import {previewCore} from '../src/policy.js';
 import {recordInference,runtimeStatus} from '../src/runtime-status.js';
 test('only recognized successful source labels establish session evidence',()=>{
  const observed={cloud:false,device:false,last:null};
- for(const source of ['PREVIEW','UNKNOWN',undefined,'cloud'])recordInference(observed,source);
+ for(const source of ['PREVIEW','LOCAL_DETERMINISTIC','UNKNOWN',undefined,'cloud'])recordInference(observed,source);
  assert.match(runtimeStatus(true,observed),/Cloud unverified · Device unverified/);
  recordInference(observed,'in_cloud');assert.match(runtimeStatus(true,observed),/Cloud verified · Device unverified · last: in_cloud/);
  recordInference(observed,'on_device');assert.match(runtimeStatus(true,observed),/Cloud verified · Device verified · last: on_device/);
@@ -14,6 +14,7 @@ test('only recognized successful source labels establish session evidence',()=>{
 const bundle=await build({entryPoints:['src/main.js'],bundle:true,write:false,format:'esm',loader:{'.css':'empty'},define:{'import.meta.env':'{}'},plugins:[{name:'offline-ai',setup(b){
  b.onResolve({filter:/\/ai\.js$/},()=>({path:'offline-ai',namespace:'stub'}));
  b.onLoad({filter:/.*/,namespace:'stub'},()=>({contents:`
+ globalThis.aiModuleLoads=(globalThis.aiModuleLoads||0)+1;
  export const configured=true,debugRequested=false;
  export function initializeConnection(){return {debug:false}}
  export async function verifyAppCheck(){return {verified:true}}
@@ -190,4 +191,40 @@ test('rejected draft history survives reload, remains read-only and renders text
  assert.match(text,/Generation time unknown · Saved:/);assert.doesNotMatch(text,/Generated:/);
  assert.match(text,/Next-draft instructions recorded at send-back: Use three steps next time/);
  legacy.dom.window.close();
+});
+
+test('local checklist queue requires review before manual download, no Firebase or AI, and preserves history',async()=>{
+ const {dom,w}=await boot([]);let downloads=0,filename;
+ w.URL.createObjectURL=()=>{downloads++;return 'blob:local-test'};w.URL.revokeObjectURL=()=>{};
+ w.HTMLAnchorElement.prototype.click=function(){filename=this.download};
+ const form=w.document.querySelector('form');form.elements.title.value='../../Workshop';
+ form.elements.brief.value='Fold paper\nTest flight';form.elements.kind.value='checklist';form.elements.kind.onchange();
+ assert.equal(form.elements.mode.disabled,true);assert.equal(form.elements.consent.disabled,true);
+ await form.onsubmit({preventDefault(){},currentTarget:form});
+ await button(w,'Start queue').onclick();
+ let t=JSON.parse(w.localStorage.getItem('relay-board-v1'))[0];
+ assert.equal(t.state,'review');assert.equal(t.result.source,'LOCAL_DETERMINISTIC');
+ assert.equal(w.aiModuleLoads,undefined);assert.equal(downloads,0);
+ assert.match(w.document.querySelector('.stats').textContent,/0 \/ 6Session attempts/);
+ button(w,'Read result').onclick();assert.equal(button(w,'Download approved Markdown'),undefined);
+ w.document.querySelector('textarea[name=revisionFeedback]').value='Keep the checklist short';
+ await button(w,'Send back').onclick();t=JSON.parse(w.localStorage.getItem('relay-board-v1'))[0];
+ assert.equal(t.history[0].source,'LOCAL_DETERMINISTIC');assert.equal(t.cloudAllowed,false);
+ await button(w,'Start queue').onclick();button(w,'Read result').onclick();
+ assert.match(w.document.querySelector('dialog pre').textContent,/Keep the checklist short/);
+ await button(w,'Approve result').onclick();assert.equal(downloads,0);
+ button(w,'Read result').onclick();await button(w,'Download approved Markdown').onclick();
+ assert.equal(downloads,1);assert.equal(filename,'relay-checklist.md');assert.equal(w.aiModuleLoads,undefined);
+ assert.equal(JSON.parse(w.localStorage.getItem('relay-board-v1'))[0].state,'done');
+ dom.window.close();
+});
+
+test('local checklist runs after the six AI attempt cap without another inference',async()=>{
+ const tasks=Array.from({length:6},(_,i)=>({id:'ai-'+i,title:'Synthetic',brief:'Public test',priority:1,sequence:i,state:'queued',mode:'cloud',cloudAllowed:true}));
+ tasks.push({id:'checklist',title:'Local',brief:'Fold paper',kind:'checklist',priority:1,sequence:6,state:'queued',mode:'local',cloudAllowed:false});
+ const {dom,w}=await boot(tasks);let requests=0;w.onGenerate=async()=>{requests++;return {text:'Synthetic',source:'in_cloud',createdAt:'2026-11-12T00:00:00Z'}};
+ await button(w,'Start queue').onclick();
+ assert.equal(requests,6);assert.match(w.document.querySelector('.stats').textContent,/6 \/ 6Session attempts/);
+ const saved=JSON.parse(w.localStorage.getItem('relay-board-v1'));assert.equal(saved[6].state,'review');assert.equal(saved[6].result.source,'LOCAL_DETERMINISTIC');
+ dom.window.close();
 });

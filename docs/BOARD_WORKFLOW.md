@@ -28,10 +28,24 @@ All board writes and the complete queue run now require the same Web Lock. A bus
 
 ## Previous drafts: bounded local history
 
-Sending a result back now preserves a read-only local copy with its source (PREVIEW, in_cloud, on_device or UNKNOWN), generated/saved timestamps, sent-back review state and the next-draft instructions recorded at that moment. Use Previous drafts on the task card. The current result still follows its normal review/done state; archived results cannot be approved or executed.
+Sending a result back now preserves a read-only local copy with its source (PREVIEW, LOCAL_DETERMINISTIC, in_cloud, on_device or UNKNOWN), generated/saved timestamps, sent-back review state and the next-draft instructions recorded at that moment. Use Previous drafts on the task card. The current result still follows its normal review/done state; archived results cannot be approved or executed.
 
 History never enters model prompts and is never uploaded by this feature. It remains part of local board storage and the existing explicit Export. It is unencrypted like the rest of the board.
 
 Retention is bounded: at most three archived drafts per task, 8,000 characters of output per archive, and 80,000 output-plus-feedback characters across the board's history. The oldest archives are removed when limits are exceeded. Shortened output and removed older drafts are disclosed in the UI. These are character limits, not a guarantee that the browser's total storage quota cannot fill; live task content and other origin data also use storage. Existing save-error warnings still apply. Export important drafts before they exceed retention.
 
 Validation: 36 offline tests passed and production build passed. New regressions cover retention/pruning, source/time/review metadata, malformed history rejection, reload, safe text rendering, read-only controls and exclusion from model prompts. No live AI, browser setting, GPU, license or sharing-permission changes were made.
+
+## Local checklist artifact (no AI)
+
+Choose **Task type → Local checklist** when adding a new task. The brief supplies one checklist item per non-empty line (maximum 100 items). Route and cloud permission controls are disabled for this type. Existing AI tasks keep their prior behavior; task type conversion is not supported.
+
+Start queue processes it in the same priority/FIFO order through running → review. The formatter deterministically produces Markdown with all items unchecked, explicitly labeled **LOCAL_DETERMINISTIC**. It organizes supplied text; it does not perform the listed work, interpret arbitrary commands, call a model, initialize Firebase, or send data. Reviewer notes are copied into the next document as notes, not interpreted or applied as edits.
+
+Approve result marks the document reviewed, not the underlying checklist work completed. Only then does Read result offer **Download approved Markdown**. Download requires a separate click, uses the fixed safe filename `relay-checklist.md`, and follows the browser's save settings (a save dialog is not guaranteed). No file is automatically written on queue completion or approval. User text is escaped for Markdown/HTML and displayed as plain text in the review UI. The existing Export continues to export the whole local board.
+
+Local formatting does not consume the AI session-attempt counter or require cloud consent, and can run after the six-attempt AI limit. It does not bypass a higher-priority AI task blocked by consent/configuration, or falsely establish device/cloud inference verification. The existing Rust/WASM core remains required for Start queue; no ABI or toolchain change was made.
+
+The queue runs only while this tab is open. Between tasks it yields so Pause can stop later items. Web Locks, stale-board protection, interrupted-work blocking, human review and bounded sent-back history also apply to local results. Closing the tab does not create a background worker. This is a deterministic document builder alongside an AI draft queue, not a coding agent or external task executor.
+
+Validation: the 40-test offline suite and production build passed, followed by one additional targeted regression proving local execution after six mocked AI attempts. Tests cover deterministic output, literal escaped input, unchecked items, local source/history, no Firebase module load for local-only execution, zero AI attempts, approval-gated manual download and its fixed filename. No live AI, model download, GPU work, browser configuration, authentication, permission, dependency or license changes were made. Actual browser download behavior remains to be checked separately.

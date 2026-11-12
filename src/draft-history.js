@@ -1,5 +1,5 @@
 export const HISTORY_PER_TASK=3,HISTORY_TEXT_LIMIT=8000,HISTORY_BOARD_BUDGET=80000;
-const sources=['PREVIEW','in_cloud','on_device','UNKNOWN'];
+const sources=['PREVIEW','LOCAL_DETERMINISTIC','in_cloud','on_device','UNKNOWN'];
 const cost=h=>h.text.length+h.feedback.length;
 const validDate=v=>typeof v==='string'&&v.length<=64&&Number.isFinite(Date.parse(v));
 export function validateHistory(tasks){
