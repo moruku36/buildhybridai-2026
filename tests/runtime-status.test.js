@@ -228,3 +228,20 @@ test('local checklist runs after the six AI attempt cap without another inferenc
  const saved=JSON.parse(w.localStorage.getItem('relay-board-v1'));assert.equal(saved[6].state,'review');assert.equal(saved[6].result.source,'LOCAL_DETERMINISTIC');
  dom.window.close();
 });
+
+test('local JSON check retains failed structured evidence through review/reload without AI or download',async()=>{
+ const {dom,w}=await boot([]);const form=w.document.querySelector('form');
+ const input='[\n {"id":"a","title":"<img src=x onerror=alert(1)>","priority":9}\n]';
+ form.elements.title.value='Backlog check';form.elements.brief.value=input;form.elements.kind.value='json-check';form.elements.kind.onchange();
+ assert.equal(form.elements.mode.disabled,true);assert.equal(form.elements.consent.disabled,true);
+ await form.onsubmit({preventDefault(){},currentTarget:form});await button(w,'Start queue').onclick();
+ let saved=JSON.parse(w.localStorage.getItem('relay-board-v1')),t=saved[0];
+ assert.equal(t.brief,input);assert.equal(t.state,'review');assert.equal(t.result.data.valid,false);
+ assert.equal(t.result.data.issues[0].path,'$[0].priority');assert.equal(w.aiModuleLoads,undefined);
+ assert.match(w.document.querySelector('.stats').textContent,/0 \/ 6Session attempts/);assert.equal(w.document.querySelector('img'),null);
+ button(w,'Read result').onclick();assert.match(w.document.querySelector('dialog').textContent,/Approval acknowledges the report/);
+ await button(w,'Approve result').onclick();button(w,'Read result').onclick();assert.equal(button(w,'Download approved Markdown'),undefined);
+ saved=JSON.parse(w.localStorage.getItem('relay-board-v1'));const reload=await boot(saved);button(reload.w,'Read result').onclick();
+ assert.match(reload.w.document.querySelector('dialog pre').textContent,/Result: FAIL/);assert.equal(saved[0].result.data.valid,false);
+ assert.equal(saved[0].state,'done');reload.dom.window.close();dom.window.close();
+});
