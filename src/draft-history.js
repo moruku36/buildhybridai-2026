@@ -9,7 +9,7 @@ export function validateHistory(tasks){
   if(task.history===undefined)continue;
   if(!Array.isArray(task.history)||task.history.length>HISTORY_PER_TASK)throw Error('Invalid draft history');
   for(const h of task.history){
-   if(!h||typeof h.text!=='string'||h.text.length>HISTORY_TEXT_LIMIT||typeof h.feedback!=='string'||h.feedback.length>2000||!sources.includes(h.source)||h.reviewState!=='sent_back'||typeof h.shortened!=='boolean'||!validDate(h.createdAt)||!validDate(h.archivedAt))throw Error('Invalid draft history');
+   if(!h||typeof h.text!=='string'||h.text.length>HISTORY_TEXT_LIMIT||typeof h.feedback!=='string'||h.feedback.length>2000||!sources.includes(h.source)||h.reviewState!=='sent_back'||typeof h.shortened!=='boolean'||(h.createdAt!==null&&!validDate(h.createdAt))||!validDate(h.archivedAt))throw Error('Invalid draft history');
    total+=cost(h);
   }
  }
@@ -21,7 +21,7 @@ export function archiveRejectedDraft(tasks,task,now=new Date().toISOString()){
  task.history??=[];
  task.history.push({text:text.slice(0,HISTORY_TEXT_LIMIT),feedback:feedback.slice(0,2000),
   source:sources.includes(task.result.source)?task.result.source:'UNKNOWN',
-  createdAt:validDate(task.result.createdAt)?task.result.createdAt:now,archivedAt:now,
+  createdAt:validDate(task.result.createdAt)?task.result.createdAt:null,archivedAt:now,
   reviewState:'sent_back',shortened:text.length>HISTORY_TEXT_LIMIT});
  const removeOldest=t=>{t.history.shift();t.historyPruned=Math.min(1000000,(t.historyPruned||0)+1)};
  while(task.history.length>HISTORY_PER_TASK)removeOldest(task);

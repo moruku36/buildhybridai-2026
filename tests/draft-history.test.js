@@ -21,3 +21,10 @@ test('history validation is backward compatible and rejects invalid persisted da
  const t={result};archiveRejectedDraft([t],t);const h=t.history[0];
  for(const bad of [{...h,text:'x'.repeat(8001)},{...h,source:'fake-success'},{...h,reviewState:'approved'},{...h,archivedAt:'bad'},{...h,feedback:3}])assert.throws(()=>validateHistory([{history:[bad]}]));
 });
+
+test("missing generation time is unknown, not the archive time",()=>{
+ const t={result:{text:"Legacy draft",source:"UNKNOWN"}};
+ archiveRejectedDraft([t],t,"2026-11-12T01:00:00Z");
+ assert.equal(t.history[0].createdAt,null);
+ assert.equal(t.history[0].archivedAt,"2026-11-12T01:00:00Z");validateHistory([t]);
+});

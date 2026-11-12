@@ -184,4 +184,10 @@ test('rejected draft history survives reload, remains read-only and renders text
  const d=reload.w.document.querySelector('dialog');assert.match(d.textContent,/in_cloud · Sent back/);assert.match(d.querySelector('pre').textContent,/<img src=x/);assert.equal(d.querySelector('img'),null);
  assert.equal([...d.querySelectorAll('button')].length,1);assert.equal(d.querySelector('button').textContent,'Close');
  button(reload.w,'Close').onclick();reload.dom.window.close();dom.window.close();
+ saved[0].history[0].createdAt=null;saved[0].history[0].feedback='Use three steps next time';
+ const legacy=await boot(saved);button(legacy.w,'Previous drafts (1)').onclick();
+ const text=legacy.w.document.querySelector('dialog').textContent;
+ assert.match(text,/Generation time unknown · Saved:/);assert.doesNotMatch(text,/Generated:/);
+ assert.match(text,/Next-draft instructions recorded at send-back: Use three steps next time/);
+ legacy.dom.window.close();
 });

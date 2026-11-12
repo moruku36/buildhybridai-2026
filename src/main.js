@@ -87,7 +87,7 @@ function showHistory(t){
  const d=node('dialog');d.append(node('h2','Previous drafts: '+t.title),node('p','Local, read-only history. These drafts are never added to model prompts. Only bounded excerpts may be retained.'));
  if(t.historyPruned)d.append(node('p',`${t.historyPruned} older draft(s) removed to limit storage.`));
  for(const h of [...(t.history||[])].reverse()){
-  d.append(node('h3',h.source+' · Sent back'),node('p',`Generated: ${h.createdAt} · Saved: ${h.archivedAt}`),node('pre',h.text));
+  d.append(node('h3',h.source+' · Sent back'),node('p',h.createdAt ? `Generated: ${h.createdAt} · Saved: ${h.archivedAt}` : `Generation time unknown · Saved: ${h.archivedAt}`),node('pre',h.text));
   if(h.shortened)d.append(node('p','This saved draft was shortened to 8,000 characters.'));
   if(h.feedback)d.append(node('p','Next-draft instructions recorded at send-back: '+h.feedback));
  }
