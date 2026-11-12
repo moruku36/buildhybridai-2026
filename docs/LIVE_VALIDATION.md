@@ -40,3 +40,11 @@ On November 12, 2026, an isolated test board on the local QA origin was checked 
 Download was absent before approval. Approving the document produced Done 1, and reopening the result exposed Download approved Markdown. One manual download action was attempted, but the browser download-event wait timed out and the expected file was not found in the checked default Downloads location. Actual file saving therefore remains unverified; this observation alone does not establish an application defect. No second download attempt or speculative code change was made.
 
 This validates the local generation and human-review UI, not file-delivery completion, device inference or hybrid fallback. No Firebase initialization, live inference or GPU work was performed in this check. Browser save behavior requires separate verification.
+
+## Fixed backlog JSON inspection UI verification (Brave)
+
+On November 12, 2026, the isolated local QA board was checked at commit c73a7d20. A P1 Local backlog JSON check used two synthetic records: both had id `demo-1`; the first had title `Prepare samples` and priority 1, while the second had an empty title and priority 7.
+
+Start queue produced a reviewable LOCAL_DETERMINISTIC report with format `relay-task-json-check-v1`, status fail, valid false, records 2, nodesVisited 9 and issueCount 3. It correctly identified the duplicate ID at `$[1].id`, blank title at `$[1].title` and out-of-range priority at `$[1].priority`. The UI remained AI not connected with zero session attempts.
+
+The report explained that approval acknowledges the report rather than certifying the input as passed or production-ready. Approval moved the task to Done without changing the failed validation result. No live AI, GPU work, authentication action or download was used. This verifies the stated synthetic failure case and review flow, not general-purpose validation or production readiness.
