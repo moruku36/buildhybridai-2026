@@ -326,3 +326,16 @@ test('stale editor rejects saving and retains user text for manual rescue',async
  assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].result.humanEdit.text,'First tab');
  assert.match(b.w.document.querySelector('dialog').textContent,/manual copying/);a.dom.window.close();b.dom.window.close();
 });
+
+test('approved packet displays exact context and current version, then becomes unavailable after edits',async()=>{
+ const t=editableTask();t.brief='Public request with constraints and acceptance criteria';
+ const {dom,w}=await boot([t]);button(w,'Read result').onclick();await button(w,'Show approved handoff packet').onclick();
+ let area=w.document.querySelector('#approved-handoff-packet');assert.equal(area.readOnly,true);
+ let p=JSON.parse(area.value);assert.equal(p.request.brief,t.brief);assert.equal(p.provenance.approvedAt,null);button(w,'Close').onclick();
+ button(w,'Read result').onclick();button(w,'Edit result locally').onclick();w.document.querySelector('#human-result-text').value='<b>Human plan</b>';await button(w,'Save local edit').onclick();
+ button(w,'Read result').onclick();assert.equal(button(w,'Show approved handoff packet'),undefined);
+ await button(w,'Approve result').onclick();button(w,'Read result').onclick();await button(w,'Show approved handoff packet').onclick();
+ area=w.document.querySelector('#approved-handoff-packet');p=JSON.parse(area.value);
+ assert.equal(p.approvedText,'<b>Human plan</b>');assert.equal(p.originalText,'Original draft');assert.ok(p.provenance.approvedAt);assert.equal(w.document.querySelector('dialog b'),null);assert.equal(w.aiModuleLoads,undefined);
+ dom.window.close();
+});
