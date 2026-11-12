@@ -63,3 +63,8 @@ Firebase setup: follow the official guide to enable Firebase AI Logic, register 
 The contest needs real Firebase AI Logic inference, supported on-device integration, App Check, an English UI, reviewable code and an open-source license. This preview does not yet satisfy those requirements. The repository's competition overview is retained, with its implementation-status paragraph updated to link here. License selection is pending; do not describe the new app as open source until licensed.
 
 For a manual, read-only model-readiness check that does not initialize Firebase or start a download, see [device availability diagnostics](DEVICE_DIAGNOSTICS.md).
+
+
+## Original-draft execution receipts
+
+New successful AI drafts record their requested route, SDK-reported actual source and whole-operation elapsed time. Review, sent-back history and approved handoff preserve this original-run evidence separately from human edits. Legacy results, fixtures and local checks do not acquire invented evidence. These local, unsigned observations do not prove runtime availability after reload or estimate charges. See [execution receipt behavior and validation](EXECUTION_RECEIPTS.md).
