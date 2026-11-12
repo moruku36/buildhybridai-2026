@@ -361,3 +361,30 @@ test('criteria approval rollback and stale tab protection preserve saved board',
  assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].title,'Other tab title');
  assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].result.criteriaReview,undefined);other.dom.window.close();
 });
+
+
+test('offline hybrid run receipt survives review, edits, handoff and history without verifying reload',async()=>{
+ const t={id:'receipt-dom',title:'Synthetic receipt',brief:'Public fictional plan',priority:1,sequence:0,state:'queued',mode:'hybrid',cloudAllowed:true};
+ const {dom,w}=await boot([t]);let requests=0;
+ w.onGenerate=async()=>{requests++;return {text:'Synthetic cloud draft',source:'in_cloud',createdAt:'2026-11-12T00:00:00Z'}};
+ const times=[100,2350];Object.defineProperty(w.performance,'now',{value:()=>times.shift()??2350});
+ await button(w,'Start queue').onclick();
+ let saved=JSON.parse(w.localStorage.getItem('relay-board-v1'))[0],receipt=saved.result.executionReceipt;
+ assert.deepEqual(receipt,{version:1,requestedMode:'hybrid',actualSource:'in_cloud',elapsedMs:2250});
+ button(w,'Read result').onclick();assert.match(w.document.querySelector('dialog').textContent,/Cloud served a device-preferred request/);assert.match(w.document.querySelector('dialog').textContent,/2,250 ms/);
+ await button(w,'Approve result').onclick();button(w,'Read result').onclick();button(w,'Show approved handoff packet').onclick();
+ assert.deepEqual(JSON.parse(w.document.querySelector('#approved-handoff-packet').value).provenance.executionReceipt,receipt);
+ button(w,'Close').onclick();button(w,'Read result').onclick();button(w,'Edit result locally').onclick();w.document.querySelector('#human-result-text').value='Human correction';await button(w,'Save local edit').onclick();
+ saved=JSON.parse(w.localStorage.getItem('relay-board-v1'))[0];assert.equal(saved.state,'review');assert.deepEqual(saved.result.executionReceipt,receipt);
+ button(w,'Read result').onclick();await button(w,'Send back').onclick();saved=JSON.parse(w.localStorage.getItem('relay-board-v1'))[0];assert.equal(saved.result,undefined);assert.deepEqual(saved.history[0].executionReceipt,receipt);
+ button(w,'Previous drafts (1)').onclick();assert.match(w.document.querySelector('dialog').textContent,/2,250 ms/);button(w,'Close').onclick();
+ const reload=await boot([saved]);await button(reload.w,'Initialize connection').onclick();assert.match(reload.w.document.querySelector('.status').textContent,/Cloud unverified · Device unverified/);assert.equal(requests,1);
+ reload.dom.window.close();dom.window.close();
+});
+test('offline unknown sources stay unknown and preview/failure never acquire successful receipts',async()=>{
+ const t={id:'unknown-receipt',title:'Synthetic',brief:'Public',priority:1,sequence:0,state:'queued',mode:'cloud',cloudAllowed:true};
+ const unknown=await boot([t]);unknown.w.onGenerate=async()=>({text:'Synthetic unclassified response',source:'future-source'});await button(unknown.w,'Start queue').onclick();
+ let saved=JSON.parse(unknown.w.localStorage.getItem('relay-board-v1'))[0];assert.equal(saved.result.source,'UNKNOWN');assert.equal(saved.result.executionReceipt.actualSource,'UNKNOWN');assert.match(unknown.w.document.querySelector('.status').textContent,/Cloud unverified · Device unverified/);unknown.dom.window.close();
+ const preview=await boot([t]);await button(preview.w,'Preview workflow').onclick();saved=JSON.parse(preview.w.localStorage.getItem('relay-board-v1'))[0];assert.equal(saved.result.executionReceipt,undefined);assert.equal(preview.w.aiModuleLoads,undefined);preview.dom.window.close();
+ const failed=await boot([{...t,mode:'local',cloudAllowed:false}]);await button(failed.w,'Start queue').onclick();saved=JSON.parse(failed.w.localStorage.getItem('relay-board-v1'))[0];assert.equal(saved.state,'blocked');assert.equal(saved.result,undefined);failed.dom.window.close();
+});
