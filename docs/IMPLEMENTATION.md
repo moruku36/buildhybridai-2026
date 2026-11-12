@@ -61,3 +61,5 @@ Firebase setup: follow the official guide to enable Firebase AI Logic, register 
 - Symphony license: https://github.com/openai/symphony/blob/main/LICENSE (Apache-2.0). No Symphony implementation was copied. This app is independently written and only conceptually inspired by its issue-to-work workflow. No affiliation is implied.
 
 The contest needs real Firebase AI Logic inference, supported on-device integration, App Check, an English UI, reviewable code and an open-source license. This preview does not yet satisfy those requirements. The repository's competition overview is retained, with its implementation-status paragraph updated to link here. License selection is pending; do not describe the new app as open source until licensed.
+
+For a manual, read-only model-readiness check that does not initialize Firebase or start a download, see [device availability diagnostics](DEVICE_DIAGNOSTICS.md).
