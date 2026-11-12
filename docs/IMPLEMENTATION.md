@@ -2,7 +2,7 @@
 
 ## Current truth
 
-Published implementation slice, not a submitted entry or deployed application. The board, persistence, priority changes, explicit preview fixtures, review/approve/requeue, interrupted-run recovery, and export are implemented. Rust tests and a WASM build passed on a Mac validation machine; see [validation](MAC_VALIDATION.md). Build the WASM core locally using the steps below; compiled binaries are not committed. Without it, the browser labels its JavaScript preview core and disables live inference. Live inference and real-browser visual/interaction QA are **not verified**. Firebase project configuration and App Check registration are not included.
+Published implementation slice, not a submitted entry or deployed application. The board, persistence, priority changes, explicit preview fixtures, review/approve/requeue, interrupted-run recovery, and export are implemented. Rust tests and a WASM build passed on a Mac validation machine; see [validation](MAC_VALIDATION.md). Build the WASM core locally using the steps below; compiled binaries are not committed. Without it, the browser labels its JavaScript preview core and disables live inference. One live cloud response and review flow were verified on Windows/Brave; see [live validation and limits](LIVE_VALIDATION.md). On-device inference failed on that environment, while hybrid fallback and wider browser QA remain **unverified**. Firebase project configuration and App Check registration are not included.
 
 ## One-week scope
 
@@ -31,7 +31,7 @@ This first slice is **not a Rust-rendered UI**: DOM rendering remains JavaScript
 - Reloaded running tasks become blocked. No blind duplicate call.
 - Every successful result needs human approval. Model output is plain text via textContent, never executed or rendered as HTML.
 - localStorage is unencrypted. Multiple open tabs are not coordinated in this initial slice. Do not use multiple tabs for live work yet.
-- No live calls were sent during development.
+- Initial development used no live calls. A later authorized synthetic cloud task succeeded; the separate device attempt failed. See the live validation report.
 
 ## Local setup
 
