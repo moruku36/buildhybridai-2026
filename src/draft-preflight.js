@@ -22,5 +22,8 @@ export async function generateInspectedDraft(task,prepared,inspection,assertCurr
  assertDraftCurrent(task,inspection,'running');
  const result=await prepared.model.generateContent(inspection.prompt);
  const text=result.response.text();if(!text.trim())throw Error('The model returned no text.');
- return {text:text.slice(0,20000),source:result.response.inferenceSource||'UNKNOWN',createdAt:new Date().toISOString()};
+ // Never make an incomplete draft look like the full result a human approved.
+ // Inference has already happened; fail without saving a truncated artifact.
+ if(text.length>20000)throw Error('The model returned more than 20,000 characters. No partial draft was saved. The request already ran and may have consumed quota; no automatic retry. Use a narrower brief before explicitly retrying.');
+ return {text,source:result.response.inferenceSource||'UNKNOWN',createdAt:new Date().toISOString()};
 }
