@@ -2,7 +2,7 @@
 
 ## Architecture navigation and design status — November 13, 2026
 
-[Canonical overall architecture](ARCHITECTURE.md) maps current source, consent/content-review/manual-export boundaries, storage/failures and paper-inspired **unimplemented** request-plan/payload/preflight proposals. DLite was reviewed as HTML text, not independently checked PDF figures; the far-edge paper review is **abstract-only and incomplete**. No runtime, schema, dependency or feature change is delivered by that design. The live records below are historical, not fresh validation; device/hybrid remain unvalidated. Follow **app usage guide → device/hybrid validation → submission preparation last**. Implementation and validation wait remains in place while runtime repair is handled separately; proposed features do not auto-resume work or replace that order.
+[Canonical overall architecture](ARCHITECTURE.md) records the November 13 design baseline, including consent/content-review/manual-export boundaries, storage/failures and then-unimplemented request-plan/payload/preflight proposals. DLite was reviewed as HTML text, not independently checked PDF figures; the far-edge paper review is **abstract-only and incomplete**. That design document delivers no runtime evidence or performance claim. Implementation resumed November 14: the narrow exact-prompt slice below does not implement the broader versioned plan/context-selection design. The live records below remain historical; device/hybrid remain unvalidated. Follow **app usage guide → device/hybrid validation → submission preparation last**. See the [English demo walkthrough](DEMO_WALKTHROUGH.md) and collapsed in-app guide; neither is a completed live demo.
 
 ## Current truth
 
@@ -71,7 +71,34 @@ For a manual, read-only model-readiness check that does not initialize Firebase 
 
 ## Bounded single-task execution
 
-Queued cards expose **Run this task only** for an explicit one-card run followed by a pause. Other queued tasks do not start, regardless of priority. It shares the normal queue's permission, Web Locks, stale-storage, session attempt limits and receipt path; it is not a separate inference route or proof of hybrid readiness. **Start queue** retains priority/FIFO behavior. See [one-task workflow and verification limits](SINGLE_TASK_EXECUTION.md).
+Queued cards expose **Run this task only**. For AI tasks it opens prompt inspection, then **Run inspected task only** starts one card followed by a pause. Local checklist/JSON tasks skip AI prompt inspection. Other queued tasks do not start, regardless of priority. It shares the normal queue's permission, Web Locks, stale-storage, session attempt limits and receipt path; it is not a separate inference route or proof of hybrid readiness. **Start queue** retains priority/FIFO behavior. See [one-task workflow and verification limits](SINGLE_TASK_EXECUTION.md).
+
+## Exact prompt inspection — November 14, 2026
+
+The one-task AI dialog shows the entire `buildDraftPrompt` string and `TextEncoder` UTF-8 byte length. This includes the existing drafting instruction and JSON-escaped current title, brief and optional revision feedback; no content is summarized or dropped and no history, route, approval or inspection metadata is inserted. This is **prompt-string bytes**, not tokens, SDK/HTTP envelope size or billed cost. Display uses plain text.
+
+Opening inspection acquires the normal board lock for a fresh snapshot but imports no Firebase SDK and starts no model/download. The final **Run inspected task only** action reacquires the lock, checks current content, route, cloud permission, queued lifecycle and storage, then freezes the same string through device preparation. Immediately before the sole `generateContent` call, it rechecks lock/membership, running lifecycle, storage freshness, session cap, content, route and permission. A changed board stops without dispatch or overwriting that new board. A consumed dialog cannot dispatch twice. Failed/aborted attempts are not retried; preparation-started attempts conservatively consume the existing session counter.
+
+**Start queue** still intentionally runs priority/FIFO tasks without per-task inspection dialogs, freezing each current prompt and applying the same dispatch-time gates. Local stays `ONLY_ON_DEVICE`; hybrid remains `PREFER_ON_DEVICE` with SDK fallback, not an app retry; cloud stays `ONLY_IN_CLOUD`. Existing task-scoped permission remains necessary for hybrid/cloud. This patch does **not** turn that stored permission into versioned one-attempt consent, a persistent revision/request-plan schema or an SDK cancellation guarantee. Editing revision feedback already clears cloud permission.
+
+Inspection is ephemeral, never added to localStorage, execution receipt v1 or handoff v1. Legacy boards/results remain readable without invented inspection/receipt evidence. The DEV+loopback+explicit fixture gate, manual review/criteria/approval and six-attempt limit are unchanged.
+
+## Patch verification and remaining setup — November 14, 2026
+
+The parent reviewed the source diff and ran `node --test tests/draft-preflight-selected.test.js` **exactly once: 5/5 PASS**, duration **315.364542 ms**. These five selected offline cases use synthetic Firebase and WASM boundaries, not real attestation, model inference or WASM execution. Separately, `npm run build` ran **exactly once: SUCCESS**, Vite **7.3.8**, **36 modules**, **153 ms**. This documentation reconciliation did not rerun either command.
+
+The historical Relay allowance remains **10 cases / 3 invocations**, recorded separately. The additional **5 cases / 1 invocation** are now **exhausted** across local/CI verification; this is not a reset, a full-suite pass or an allowance for reruns. The generic setup recipe above is not permission to execute its test steps for this patch.
+
+A read-only SHA-256 check found both `public/relay_core.wasm` and `dist/relay_core.wasm` present and equal to the expected **`4e498b782bd71b3962f7c9fd748534e84df8b94ae0c65399627e5e498e78fe8e`**. This confirms the expected binary is packaged, not that a browser loaded or executed it.
+
+Remaining acceptance dependencies:
+
+- **Firebase configuration:** subsequent owner-authorized setup placed the existing public Web app configuration in ignored `.env.local`; it is not included in tracked source. The earlier absence observation predates that setup. Configuration presence is not connection or inference proof. The source requires public `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID` and, in production, a registered `VITE_APPCHECK_SITE_KEY`. Do not overwrite existing local configuration with the generic setup recipe. No ignored configuration values were read for this static reconciliation.
+- **App Check and current pause:** the existing Web app remains unregistered: its Console reCAPTCHA v3 registration controls were disabled. No provider substitution was made; Firebase AI Logic enforcement remains enabled. Local debug credential generation/registration, Initialize connection and Verify App Check remain unexecuted. The owner paused local-browser setup and acceptance while using Windows; this static patch does not resume those steps, downloads or inference. Historical Windows/Brave debug success does not establish this checkout's attestation. Production needs a supported registered provider compatible with the source, not the DEV+loopback debug path; see [local App Check](LOCAL_APP_CHECK.md).
+- **Eligible browser/device:** model availability, readiness and any required preparation/download remain unverified here. The [historical live record](LIVE_VALIDATION.md) includes a Brave API-unavailable device failure, incomplete Windows Chrome availability checking and unresolved GPU-workload coordination; these are not new Chrome/device results. A working browser must load the WASM core and support Web Locks on a secure/loopback origin. [Availability inspection](DEVICE_DIAGNOSTICS.md) is not an inference pass and does not authorize a download.
+- **Actual acceptance:** successful Firebase `ONLY_ON_DEVICE` inference, separately consented `PREFER_ON_DEVICE` behavior with honest SDK-reported source, the new two-click one-task flow, review/edit/criteria/approval, actual browser file-save, keyboard and narrow-screen behavior still need bounded validation. No browser/server, download, live inference, configuration/account change, deployment, publication or submission was performed in this reconciliation.
+
+The patch is offline-verified and production-built, **not accepted as a usable device/hybrid app**. Keep the [demo storyboard](DEMO_WALKTHROUGH.md) labeled as a plan; submission preparation remains last.
 
 ## Approved handoff file
 

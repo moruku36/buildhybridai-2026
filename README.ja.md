@@ -47,7 +47,11 @@
 
 **このリポジトリの現在の状態：** Relayワークボードの実装を追加しました。[セットアップ・設計](docs/IMPLEMENTATION.md)、[初期検証](docs/VERIFICATION.md)、[Rust/WASM追加検証](docs/MAC_VALIDATION.md)をご覧ください。Windows/Braveでクラウド実推論とレビュー完了まで確認しました。[実機検証と制限](docs/LIVE_VALIDATION.md)に記録しています。オンデバイス推論は失敗し、ハイブリッドfallbackや他環境の検証は未完了です。デモ公開、大会提出、OSSライセンスの追加は未実施です。ライセンスは所有者の判断待ちで、公開設定だけではオープンソースになりません。
 
-**Relay全体設計（2026年11月13日）：** [正本のアーキテクチャ文書（英語）](docs/ARCHITECTURE.md)で、実装済み機能と論文から着想したpayload/preflightの未実装案を分けています。DLiteはHTML本文を確認しましたが、far-edge論文は**抄録のみで全文確認は未完了**です。この文書更新による機能追加・実機検証・性能の実証はありません。優先順は**アプリの使い方ガイド → 端末・hybrid実機検証 → 最後に提出準備**のままです。実装・検証の待機は解除していません。
+**Relay全体設計（2026年11月13日）：** [正本のアーキテクチャ文書（英語）](docs/ARCHITECTURE.md)は同日時点の設計基準で、実装済み機能と論文から着想した案を分けています。DLiteはHTML本文を確認しましたが、far-edge論文は**抄録のみで全文確認は未完了**です。論文由来の性能向上は実証していません。
+
+**ソース更新（2026年11月14日）：** 実装を再開しました。アプリ内の折りたたみガイドと[3分以内の英語デモ台本](docs/DEMO_WALKTHROUGH.md)で、公開issue → 1件の確認済みプロンプト → レビュー → 手動引き渡しを案内します。AIタスクの **Run this task only** は正確なプロンプトとUTF-8バイト数を表示し、**Run inspected task only** で同じ固定文字列を送信直前の内容・経路・現在のクラウド許可・保存状態を再確認して使用します。要約や隠れた入力メタデータ、永続request-plan、新しい同意スキーマは追加していません。[実装範囲と制限（英語）](docs/IMPLEMENTATION.md#exact-prompt-inspection--november-14-2026)を参照してください。この変更用の選択的なオフライン検証は**1回の実行で5/5ケース成功**、production buildも1回成功しました（Vite 7.3.8、36 modules、153 ms）。publicとdistのWASMは期待するSHA-256と一致しています。[正確な検証記録と残るセットアップ（英語）](docs/IMPLEMENTATION.md#patch-verification-and-remaining-setup--november-14-2026)を参照してください。これはオフライン・ビルド結果であり、端末・hybrid実推論、ブラウザのファイル保存、利用可能アプリとしての受け入れは未検証、提出も未実施です。優先順は**ガイド → 端末・hybrid実機検証 → 最後に提出準備**です。
+
+**ローカル設定の現状（2026年11月14日）：** 既存Firebase Webアプリの公開設定はGit管理対象外のローカル設定に保存済みです。App Check v3登録はConsoleの操作欄が無効なため未完了で、ローカルdebug認証情報の生成・登録、接続初期化、attestation交換も未実行です。AI Logicの適用は維持しています。オーナーがWindows利用中のためローカルブラウザー設定・受入確認は停止中です。設定の存在は端末・ハイブリッド推論の成功を意味しません。[残る設定・確認](docs/IMPLEMENTATION.md#patch-verification-and-remaining-setup--november-14-2026)を参照してください。
 
 ## 審査基準
 
