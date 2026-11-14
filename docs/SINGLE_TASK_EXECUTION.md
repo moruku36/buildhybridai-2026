@@ -41,6 +41,18 @@ automatic fallback experiment, or proof that a browser supports on-device AI.
 - Permission/configuration failures do not run another task instead.
 - An execution failure blocks the selected task and never retries or advances
   to the remaining queue. Reload/interruption recovery remains unchanged.
+- AI responses longer than 20,000 JavaScript string units (UTF-16 code units,
+  not bytes or tokens) fail visibly rather than silently keeping only a prefix.
+  No partial result enters review or approved handoff. Inference has already
+  happened and may have consumed quota; this does not refund an attempt.
+  Narrow the brief before explicitly returning the task to the queue. Responses
+  at or below the limit retain their exact text; blank responses still fail.
+  Three isolated synthetic cases in `tests/draft-output-limit-selected.test.js`
+  passed once on November 14, 2026: oversized output rejection, exact 20,000
+  UTF-16-unit Unicode retention with SDK source, and blank-output rejection.
+  This is mocked unit evidence, not browser, device, Firebase or live-inference
+  acceptance. The separate 3-case/1-invocation allowance is exhausted; these
+  results are not part of the historical pass receipts below.
 - Pause only requests a stop after the current request; it does not cancel a
   model download or in-flight inference. Closing the tab is not a cancellation
   or billing guarantee.
