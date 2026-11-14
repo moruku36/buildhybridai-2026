@@ -1,4 +1,4 @@
-import {buildDraftPrompt} from './draft-prompt.js';
+import {generateInspectedDraft} from './draft-preflight.js';
 import {deviceModelOptions} from './device-options.js';
 import {initializeApp} from 'firebase/app';
 import {initializeAppCheck,ReCaptchaV3Provider,CustomProvider,getToken} from 'firebase/app-check';
@@ -38,10 +38,6 @@ export function prepareModel(mode,onProgress){
  if(mode==='hybrid')ready=ready.catch(()=>undefined);
  return {model,ready};
 }
-export async function generateDraft(task,prepared){
- await prepared.ready;
- const prompt=buildDraftPrompt(task);
- const result=await prepared.model.generateContent(prompt);
- const text=result.response.text();if(!text.trim())throw Error('The model returned no text.');
- return {text:text.slice(0,20000),source:result.response.inferenceSource||'UNKNOWN',createdAt:new Date().toISOString()};
+export function generateDraft(task,prepared,inspection,assertCurrent){
+ return generateInspectedDraft(task,prepared,inspection,assertCurrent);
 }
