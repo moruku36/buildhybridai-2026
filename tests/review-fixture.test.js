@@ -8,7 +8,7 @@ const btn=(w,text)=>[...w.document.querySelectorAll('button')].find(x=>x.textCon
 async function boot({dev=true,host='localhost',saved=[]}={}){
  const bundle=await build({entryPoints:['src/main.js'],bundle:true,write:false,format:'esm',loader:{'.css':'empty'},define:{'import.meta.env':JSON.stringify({DEV:dev,VITE_REVIEW_FIXTURE:'true'})}});
  const dom=new JSDOM('<div id="app"></div>',{url:'http://'+host,runScripts:'outside-only'}),w=dom.window;
- w.localStorage.setItem('relay-board-v1',JSON.stringify(saved));w.structuredClone=structuredClone;
+ w.localStorage.setItem('relay-board-v1',JSON.stringify(saved));w.structuredClone=structuredClone;w.TextEncoder=TextEncoder;
  Object.defineProperty(w.navigator,'locks',{value:{request:async(n,o,cb)=>cb({name:n})}});
  let fetches=0;w.fetch=async url=>{fetches++;assert.equal(url,'/relay_core.wasm');return {ok:true,arrayBuffer:async()=>new ArrayBuffer(0)};};
  w.WebAssembly={instantiate:async()=>({instance:{exports:previewCore}})};

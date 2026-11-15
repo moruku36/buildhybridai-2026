@@ -29,7 +29,7 @@ async function boot(tasks,{locks,storage}={}){
  if(tasks!==undefined)w.localStorage.setItem('relay-board-v1',JSON.stringify(tasks));
  w.fetch=async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(0)});
  w.WebAssembly={instantiate:async()=>({instance:{exports:previewCore}})};
- w.structuredClone=structuredClone;Object.defineProperty(w.navigator,'locks',{value:locks||{request:async(name,options,callback)=>callback({name})}});w.confirm=()=>true;
+ w.structuredClone=structuredClone;w.TextEncoder=TextEncoder;Object.defineProperty(w.navigator,'locks',{value:locks||{request:async(name,options,callback)=>callback({name})}});w.confirm=()=>true;
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true};
  w.HTMLDialogElement.prototype.close=function(){this.dispatchEvent(new w.Event('close'))};
  await w.eval(`(async()=>{${bundle.outputFiles[0].text}\n})()`);

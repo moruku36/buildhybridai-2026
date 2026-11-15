@@ -21,7 +21,14 @@ export async function generateInspectedDraft(task,prepared,inspection,assertCurr
  assertCurrent();
  assertDraftCurrent(task,inspection,'running');
  const result=await prepared.model.generateContent(inspection.prompt);
- const text=result.response.text();if(!text.trim())throw Error('The model returned no text.');
+ const text=result.response.text();
+ if(!text.trim()){
+  // HTTP success with no text is still a failed draft. Surface only the SDK's
+  // enum-like reason (e.g. MAX_TOKENS, SAFETY) so the person can narrow the brief.
+  const reason=result.response.candidates?.[0]?.finishReason??result.response.promptFeedback?.blockReason;
+  const detail=typeof reason==='string'&&/^[A-Z_]{1,40}$/.test(reason)?` Reported reason: ${reason}.`:'';
+  throw Error('The model returned no text.'+detail+' The request already ran and may have consumed quota; no automatic retry.');
+ }
  // Never make an incomplete draft look like the full result a human approved.
  // Inference has already happened; fail without saving a truncated artifact.
  if(text.length>20000)throw Error('The model returned more than 20,000 characters. No partial draft was saved. The request already ran and may have consumed quota; no automatic retry. Use a narrower brief before explicitly retrying.');

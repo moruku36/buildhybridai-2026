@@ -32,12 +32,20 @@ const task=(id,priority=1)=>({id,title:id,brief:'Public synthetic validation tas
 const saved=w=>JSON.parse(w.localStorage.getItem(key));
 const button=(w,title)=>[...w.document.querySelectorAll('article')].find(c=>c.querySelector('h4').textContent===title)?.querySelectorAll('button');
 const runButton=(w,title)=>[...button(w,title)].find(b=>b.textContent==='Run this task only');
+// AI tasks need two explicit clicks: open exact-prompt inspection, then run the inspected snapshot.
+async function runInspected(w,opener){
+ await opener.onclick();
+ const execute=[...w.document.querySelectorAll('dialog button')].find(b=>b.textContent==='Run inspected task only');
+ if(execute)await execute.onclick();
+}
 async function boot(t,tasks){
  const dom=new JSDOM('<div id="app"></div>',{url:'http://localhost/',runScripts:'outside-only'});
  t.after(()=>dom.window.close());
  const w=dom.window;
  w.localStorage.setItem(key,JSON.stringify(tasks));
- w.structuredClone=structuredClone;
+ w.structuredClone=structuredClone;w.TextEncoder=TextEncoder;
+ w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
+ w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
  w.fetch=async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(0)});
  w.WebAssembly={instantiate:async()=>({instance:{exports:previewCore}})};
  const control={calls:[],preparations:[],held:false,deny:false,fail:false};
@@ -56,7 +64,12 @@ async function boot(t,tasks){
 test('an explicit single-task run skips higher priority work, preserves its route and receipt, and stops',async t=>{
  const {w,control}=await boot(t,[task('first-0'),task('chosen-1',3),task('last-2',3)]);
  assert.deepEqual(control.calls,[]);
- await runButton(w,'chosen-1').onclick();
+ const opener=runButton(w,'chosen-1');
+ await opener.onclick();
+ // Opening inspection prepares and sends nothing.
+ assert.deepEqual(control.calls,[]);assert.deepEqual(control.preparations,[]);
+ assert.match(w.document.querySelector('dialog[aria-label="Inspect exact AI prompt"] pre').textContent,/chosen-1/);
+ await [...w.document.querySelectorAll('dialog button')].find(b=>b.textContent==='Run inspected task only').onclick();
  assert.deepEqual(control.calls,['chosen-1']);
  assert.deepEqual(control.preparations,['hybrid']);
  const board=saved(w);
@@ -70,7 +83,7 @@ test('an explicit single-task run skips higher priority work, preserves its rout
 test('single-task execution cannot bypass cloud permission or run a different permitted task',async t=>{
  const denied={...task('denied-0'),cloudAllowed:false};
  const {w,control}=await boot(t,[denied,task('allowed-1')]);
- await runButton(w,'denied-0').onclick();
+ await runInspected(w,runButton(w,'denied-0'));
  assert.deepEqual(control.calls,[]);
  assert.deepEqual(control.preparations,[]);
  assert.deepEqual(saved(w).map(t=>t.state),['queued','queued']);
@@ -81,14 +94,16 @@ test('a failed single-task run blocks only that task and never retries or advanc
  const {w,control}=await boot(t,[task('failed-0'),task('untouched-1')]);
  const staleButton=runButton(w,'failed-0');
  control.fail=true;
- await staleButton.onclick();
+ await runInspected(w,staleButton);
  assert.deepEqual(control.calls,['failed-0']);
  assert.deepEqual(saved(w).map(t=>t.state),['blocked','queued']);
  assert.match(saved(w)[0].error,/Synthetic inference failure/);
- // A stale handler must not fall back to running the remaining queue.
- await staleButton.onclick();
+ // A stale handler must not reopen inspection or fall back to running the remaining queue.
+ await runInspected(w,staleButton);
  assert.deepEqual(control.calls,['failed-0']);
- assert.match(w.document.querySelector('.notice').textContent,/no longer queued/);
+ assert.equal(w.document.querySelector('dialog'),null);
+ assert.match(w.document.querySelector('.notice').textContent,/Inspect a current queued AI task/);
+ assert.deepEqual(saved(w).map(t=>t.state),['blocked','queued']);
  assert.equal(control.held,false);
 });
 
@@ -118,7 +133,7 @@ test('a changed storage snapshot rejects the stale single-task click without ove
 test('separate single-task starts share the existing six-attempt session limit',async t=>{
  const tasks=Array.from({length:7},(_,i)=>task('limit-'+i));
  const {w,control}=await boot(t,tasks);
- for(const task of tasks)await runButton(w,task.title).onclick();
+ for(const task of tasks)await runInspected(w,runButton(w,task.title));
  assert.equal(control.calls.length,6);
  assert.equal(control.preparations.length,6);
  assert.deepEqual(saved(w).map(t=>t.state),['review','review','review','review','review','review','queued']);

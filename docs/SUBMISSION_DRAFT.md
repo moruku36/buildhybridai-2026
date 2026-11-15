@@ -40,7 +40,7 @@ The described flows are present in the reviewed source, not proof of a deployed 
 
 A November 14, 2026 local development trial completed an explicit App Check verification. A subsequent cloud generation request returned HTTP 200 but no readable text. Relay stopped with **“The model returned no text.”** This was a failed generation, not a successful draft, and no automatic retry occurred. The underlying cause, returned model version, finish reason, usage and cost are unknown.
 
-That historical trial ran a different checkout from the current reviewed source. It does not establish current-revision acceptance or production attestation. Genuine device/hybrid evidence, end-to-end browser review and file-save acceptance, free working judge access, a public demonstration video, license selection and final eligibility/IP disclosures remain incomplete.
+That historical trial ran a different checkout from the current reviewed source. It does not establish current-revision acceptance or production attestation. Genuine device/hybrid evidence, end-to-end browser review and file-save acceptance, free working judge access, a public demonstration video and final eligibility/IP disclosures remain incomplete.
 
 If a recording shows an empty generation, keep the failure explicit. Any subsequent illustrative review sequence must be labeled **STORYBOARD — NOT A MODEL RESULT**, never spliced in as the failed task's successful output. A storyboard is not a functioning-app demonstration.
 
@@ -58,7 +58,7 @@ The recording and setup guides are plans with dated limitations, not evidence of
 
 - Entrant, authorized representative, team members and eligibility confirmation.
 - Pre-existing code, design and assets; submission-period changes and their significance; IP permissions and third-party notices. Commit dates alone do not prove eligibility or authorship.
-- Owner-selected license and visible license file. Public source visibility alone is not an open-source license.
+- License: Apache-2.0, selected by the owner and added November 16, 2026. Third-party notices still need review.
 - Reviewed release revision and functioning free judge website or test-build access, including supported-device and App Check arrangements.
 - Public English or English-subtitled demonstration video, with duration checked against the final rules.
 - Final organizer rules, legal and existing-work disclosures, access availability and actual submission confirmation.
