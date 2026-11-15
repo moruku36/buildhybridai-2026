@@ -15,7 +15,7 @@ test('a locally edited and reapproved draft downloads its inspected snapshot, th
  const dom=new JSDOM('<div id="app"></div>',{url:'http://localhost/',runScripts:'outside-only'});
  t.after(()=>dom.window.close());
  const w=dom.window;
- w.structuredClone=structuredClone;
+ w.structuredClone=structuredClone;w.TextEncoder=TextEncoder;
  w.Blob=Blob;
  let fetches=0,modelCalls=0,lockHeld=false;
  w.fetch=async()=>{fetches++;return {ok:false};};
