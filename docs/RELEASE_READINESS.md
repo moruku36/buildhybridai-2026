@@ -47,5 +47,5 @@ These are owner actions. They need a Firebase login and change a public site.
 
 - App Check production registration. An earlier note recorded the console's reCAPTCHA v3 controls as disabled; without a registered provider the hosted app cannot pass enforced App Check.
 - ~~A successful live draft on the current revision.~~ Done later on November 16 with a development debug credential: one cloud draft was generated, reviewed and approved ([record](LIVE_VALIDATION.md#current-revision-cloud-draft--review--approval-brave-november-16-2026)). The earlier empty response was not reproduced and its cause is still unknown.
-- On-device and hybrid inference on a supported Chrome/device.
+- On-device inference on a supported Chrome/device. Hybrid cloud fallback and device-only fail-closed behaviour were observed in Brave on November 16 ([record](LIVE_VALIDATION.md#device-unavailable-behaviour-and-hybrid-cloud-fallback-brave-november-16-2026)); no `on_device` response has been observed yet.
 - A hosted judge URL, the public demo video, existing-work and eligibility disclosures, and the submission itself.
