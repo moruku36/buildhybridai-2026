@@ -1,6 +1,6 @@
-# Relay — hackathon entry draft
+# Relay — submission copy draft
 
-**Owner-review draft · November 14, 2026 · NOT SUBMITTED.** The copy below describes the reviewed source slice; public review delivery is not a deployed release. It is not a claim of deployment or contest qualification. Resolve the final-form fields and verification gates before publication.
+**Updated November 15, 2026 · Not a final contest submission.**
 
 ## Project name and tagline
 
@@ -8,71 +8,59 @@
 
 **Turn a small task into an inspected draft—and a handoff you approve.**
 
-Platform: Web / Chrome (intended supported platform; actual device qualification pending).
+Platform: Web / Chrome; supported-device qualification remains pending.
 
 Source: https://github.com/moruku36/buildhybridai-2026
 
-## Inspiration / problem
+## Inspiration
 
-Getting an AI answer is easy; knowing what was sent, what produced the answer, and what you actually approved is harder. Small public issues can become oversized conversations, and a polished draft can be mistaken for completed work. Relay makes the handoff explicit: one bounded task, an inspectable request, a draft returned for human review, and a manually exported approved result.
+Getting an AI answer is easy; understanding what was sent and what you actually approved is harder. Relay makes the handoff explicit: one bounded task, an inspectable request, a draft returned for human review, and a manually exported approved result.
 
 ## What it does
 
-Relay is a browser workboard for small drafting tasks. Paste a fictional or public issue, review an editable proposal with its goal, constraints and completion criteria, then add it to the queue without starting a request. Choose a route per task and run just that task while the rest of the board stays paused.
+Relay is a browser workboard for small drafting tasks. Review a public or fictional issue's goal, constraints and completion criteria before adding it to the queue. Queueing prepares work; it does not send an AI request.
 
-The current one-task AI flow displays the exact prompt and its UTF-8 byte count before execution. Results return to review, where the person can inspect the original run evidence, edit the text locally, assess each criterion, and approve or send it back. An approved AI result can be inspected as a context-and-result packet and manually downloaded. Editing removes the previous approval. Approval means the text was reviewed—not that code was implemented, checks passed automatically, or another agent received it.
+For one-task AI execution, Relay displays the exact prompt and its UTF-8 byte count before a separate run action. It preserves that inspected string through asynchronous model preparation and checks that the task and its execution permission are still current before dispatch. Prompt bytes are not tokens, cost or a performance measurement.
 
-Deterministic local checklist and JSON-check tasks provide useful non-AI work alongside drafts. Clearly labeled PREVIEW and development-only TEST_FIXTURE paths are rehearsal aids, not model results.
+A successfully generated draft returns for human review. The person can edit it, assess completion criteria and approve the current version. Editing clears previous approval and criterion review. The approved context-and-result packet can then be inspected and manually downloaded. Approval does not mean the suggested work was implemented or tested; downloading is not delivery to another agent or permission to execute instructions. Actual browser file saving requires separate observation.
 
-## How we built it / Firebase AI Logic
+Deterministic local tasks and clearly labeled preview or development-fixture paths support rehearsal. They are not AI results and must not be presented as successful device, cloud or hybrid inference.
 
-The app uses vanilla JavaScript and Vite for its English interface, browser localStorage for the board, and a small Rust/WASM core for deterministic state transitions, ordering and run gates. JavaScript connects to the official Firebase Web SDK (pinned Firebase 13.0.0). Firebase AI Logic uses GoogleAIBackend and getGenerativeModel; App Check is integrated separately. Production attestation uses ReCaptchaV3Provider. There is no direct Gemini HTTP client and no model inference implemented in Rust/WASM.
+## How we built it
 
-Tasks select ONLY_ON_DEVICE, PREFER_ON_DEVICE, or ONLY_IN_CLOUD through Firebase AI Logic. Device-only does not gain a cloud retry. Hybrid delegates device preference and cloud fallback to the SDK rather than making a second application-managed generation call. Cloud-eligible tasks require explicit permission for the covered title, brief and revision feedback. The requested mode and SDK-reported actual inference source are different facts: a hybrid request alone does not prove device execution or fallback. An unavailable actual source stays unknown; a cloud-served hybrid result does not disclose why fallback occurred.
+Relay uses vanilla JavaScript, Vite, a Rust/WASM state core, browser localStorage, and Firebase AI Logic with App Check integration.
 
-The one-task inspection slice freezes the inspected prompt through model preparation and rechecks current content, route, permission and storage before dispatch. Its byte count describes the prompt string, not tokens, wire traffic, energy or cost. This is not the broader proposed versioned, single-attempt consent architecture.
+Tasks request device-only, device-preferred with permitted cloud fallback, or cloud-only execution. The SDK manages hybrid routing; a requested route is not proof of the actual inference source. Device-only does not silently become a cloud retry. Real supported on-device and hybrid behavior remain unverified.
 
-## Challenges and lessons
+The design separates task preparation, request inspection, result review and manual handoff. Cloud permission means covered task content can leave the device. Local-first design is not a guarantee that all processing stays local, and browser storage is not encrypted by Relay. We have not established measured productivity, privacy, latency, cost or energy improvements.
 
-- **Keeping inspection meaningful:** asynchronous device preparation can outlive the board state the user inspected. The November 14 slice reuses the frozen string and fails closed on changed state instead of rebuilding an approximation after preparation.
-- **Keeping provenance honest:** original receipt-v1 evidence survives local edits and handoff; older results and fixtures do not acquire invented inference receipts. Requested routing must not be relabeled as observed execution.
-- **Keeping review separate from action:** criteria are human assessments of draft content. Manual packet export is not external delivery, shell execution, GitHub operation or proof that the described work happened.
-- **Respecting browser boundaries:** cooperating same-origin tabs use Web Locks and freshness checks. Interrupted or failed work blocks rather than automatically replaying. These are bounded client safeguards, not cross-device coordination, cancellation or a monetary quota.
+## Current state and limitations
 
-## Current state — retain until new evidence replaces it
+The described flows are present in the reviewed source, not proof of a deployed or contest-qualified hybrid application.
 
-The board and the above flows are present in source. Historical documentation records Windows/Brave cloud use and a failed device attempt; that is not fresh acceptance of this checkout. Parent review on November 14 recorded five selected synthetic offline cases passing in one invocation and one successful production build. Neither establishes real App Check, device inference, hybrid behavior or a browser file-save pass. Current local acceptance is paused. Real supported device/hybrid operation, end-to-end browser acceptance, judge access, licensing and the public video remain open. Relay is not yet claimed as a usable contest-qualified hybrid app or a submitted entry.
+A November 14, 2026 local development trial completed an explicit App Check verification. A subsequent cloud generation request returned HTTP 200 but no readable text. Relay stopped with **“The model returned no text.”** This was a failed generation, not a successful draft, and no automatic retry occurred. The underlying cause, returned model version, finish reason, usage and cost are unknown.
 
-## Existing work and submission-period disclosure
+That historical trial ran a different checkout from the current reviewed source. It does not establish current-revision acceptance or production attestation. Genuine device/hybrid evidence, end-to-end browser review and file-save acceptance, free working judge access, a public demonstration video, license selection and final eligibility/IP disclosures remain incomplete.
 
-The contest opening is November 11, 2026 at 13:30 Pacific / November 12 at 06:30 JST. Calendar date alone does not establish that work was done after opening.
+If a recording shows an empty generation, keep the failure explicit. Any subsequent illustrative review sequence must be labeled **STORYBOARD — NOT A MODEL RESULT**, never spliced in as the failed task's successful output. A storyboard is not a functioning-app demonstration.
 
-Read-only local Git history supports these later changes: human criteria assessment (f83e8ab, November 12 17:10 JST), original inference receipts (2224134, 18:30), one-task execution (8a54395, 19:53), inspected handoff download (33f079f, 20:03), keyboard navigation (0b3caef, 20:22), narrow-screen layout (6d0a78e, 20:33), and architecture documentation (c4e2f91, November 13 08:51). The November 14 exact-prompt/usage-guide slice was uncommitted when this draft was prepared; its eventual review PR is not a merged or deployed release. Commit metadata supports this summary, not independent proof of authorship or eligibility.
+## Existing documentation
 
-**Final disclosure text to complete:** “Pre-existing material: [OWNER: identify all code, design, assets and external components created before the opening, with provenance]. During the submission period we added [OWNER: confirm the supported changes above and their significance]. Third-party components and permissions: [OWNER: dependency/asset/license notices and any incorporated work].” No exact project inception date, absence of pre-existing work, or copied-code status is inferred here.
+- [One-task prompt inspection](SINGLE_TASK_EXECUTION.md)
+- [Review and manual packet download](HANDOFF_DOWNLOAD.md)
+- [Recording plan and fictional example](DEMO_SCRIPT.md)
+- [Judge setup and unresolved access requirements](JUDGE_SETUP.md)
+- [Implemented and proposed architecture](ARCHITECTURE.md)
 
-## Verification-dependent final claims — NOT approved copy yet
+The recording and setup guides are plans with dated limitations, not evidence of completed recording, deployment or judge access.
 
-Replace these only with actual receipts; otherwise retain the limitations above.
+## Fields to complete before final submission
 
-| Candidate final sentence | Required evidence |
-| --- | --- |
-| “Relay generated this draft on device through Firebase AI Logic.” | Successful supported device run, original timestamp and SDK-reported on_device source. |
-| “Relay demonstrates hybrid routing with explicit cloud permission.” | Actual PREFER_ON_DEVICE run and observed source; separately authorized cloud evidence. Do not claim a fallback reason the SDK did not report. |
-| “Judges can use Relay at [URL/build].” | Working free judge access, supported device/setup and enforced App Check arrangement through judging. |
-| “The approved packet was saved locally.” | Actual inspected current-version download and observed browser save. |
-| “Relay is open source under [license].” | Owner-selected license file and visible repository license metadata, plus dependency/asset review. |
+- Entrant, authorized representative, team members and eligibility confirmation.
+- Pre-existing code, design and assets; submission-period changes and their significance; IP permissions and third-party notices. Commit dates alone do not prove eligibility or authorship.
+- Owner-selected license and visible license file. Public source visibility alone is not an open-source license.
+- Reviewed release revision and functioning free judge website or test-build access, including supported-device and App Check arrangements.
+- Public English or English-subtitled demonstration video, with duration checked against the final rules.
+- Final organizer rules, legal and existing-work disclosures, access availability and actual submission confirmation.
 
-## Final-form fields — owner completion required
-
-- Entrant / authorized representative: [OWNER NAME AND AUTHORITY]
-- Team name and all eligible members / Devpost profiles: [TEAM; DO NOT ASSUME SOLO]
-- Eligibility confirmation: [AGE, RESIDENCE, EMPLOYMENT/AFFILIATIONS, CONFLICTS AND EMPLOYER CONSENT IF APPLICABLE]
-- IP ownership / permissions and existing-work disclosure: [CONFIRMED DETAILS]
-- Open-source license: [OWNER CHOICE; NOT SELECTED HERE]
-- Public YouTube video, English or English-subtitled, at most three minutes: [PUBLIC URL; NOT RECORDED HERE]
-- Working judge website or test-build access: [URL/ARTIFACT + VALIDATED SETUP; NOT OWNER LOOPBACK]
-- Judging access contact and availability: [OWNER CONTACT / ACCESS PLAN]
-- Rules/legal acceptance and final contest submission: [OWNER REVIEW + ACTUAL CONFIRMATION; NONE HERE]
-
-Submission deadline from today's rules review: December 1, 2026, 07:00 JST (November 30, 14:00 PST). November 15 is the owner's delivery target, not the organizer deadline. See [judge setup](JUDGE_SETUP.md) and [recording script](DEMO_SCRIPT.md).
+No final contest submission, qualification, working judge deployment or public video is established by this document.
