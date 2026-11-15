@@ -15,6 +15,12 @@ This records the source, test, license and hosting changes made on November 16, 
 - **Hosting configuration:** [`firebase.json`](../firebase.json) serves `dist/` through Firebase Hosting. No project identifier is committed.
 - **Readability pass:** see [responsive review](RESPONSIVE_REVIEW.md#readability-pass--november-16-2026).
 
+## Verification on November 16, 2026
+
+- CI on the pull request: 5 Rust unit tests, the WASM build, 89 offline JavaScript tests and the production build passed. The CI-built core's SHA-256 was `4e498b782bd71b3962f7c9fd748534e84df8b94ae0c65399627e5e498e78fe8e`, equal to the value recorded on November 14.
+- That CI artifact was placed in `public/` on a Windows machine and the development server was opened in a desktop browser at 1360 CSS pixels. The sidebar showed **Rust / WASM core**. A local checklist was added, run with **Run this task only**, read and approved; it moved to Done with source `LOCAL_DETERMINISTIC` and zero session attempts. For a hybrid task without cloud permission, **Run this task only** showed the exact prompt and byte count, and **Run inspected task only** stopped with "Current cloud permission is required"; no request to Google was recorded and the task stayed queued.
+- No Firebase configuration was present. No App Check exchange, model preparation or inference was run, and no file download was attempted.
+
 ## Building the core without a local Rust toolchain
 
 Some Windows machines block unsigned toolchain binaries through application-control policy. In that case, download the `relay-core-wasm` artifact from a CI run of the exact commit you are building, place it at `public/relay_core.wasm`, and compare its SHA-256 with the value printed by that run's "Record the core checksum" step. The file is ignored by git and must exist before `npm run build`; otherwise the app labels its preview core and disables task execution.
