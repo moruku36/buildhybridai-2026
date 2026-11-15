@@ -99,3 +99,19 @@ On commit 12d817db, the approved synthetic text was edited locally at 08:24:17.2
 Approve without assessment showed the refusal inside the review dialog: “Unmet or unverified criteria require explicit acknowledgment and a reason (1–500 characters).” After selecting Addressed in draft for both conditions and approving, the previous error was replaced by “Result approved and saved locally. Content review only; no work executed.” The displayed packet contained two addressed items, null overrideReason, reviewedAt 2026-11-12T08:24:29.484Z and original source TEST_FIXTURE.
 
 Start remained disabled and session attempts stayed at zero. No AI, external send, clipboard write or download occurred. Save-failure rollback and stale-tab rejection remain offline-test evidence, not claims from this browser run. These assessments concern draft content, not completed implementation or executed tests.
+
+
+## Current-revision cloud draft → review → approval (Brave, November 16, 2026)
+
+Checked on Windows Brave (Chromium 157) against `main` at c901bce, served by the Vite development server on the existing loopback board origin. The ignored local configuration requested cloud model `gemini-4-hydrogen` and the development-only App Check debug opt-in; no site key was set. The Rust/WASM core was the CI-built binary with SHA-256 `4e498b782bd71b3962f7c9fd748534e84df8b94ae0c65399627e5e498e78fe8e`, and the sidebar showed **Rust / WASM core**. The copy previously in this checkout had a different hash and was replaced.
+
+One synthetic P1 AI task, "Synthetic cloud check 2026-11-16", asked for a three-step plan for a fictional paper-plane distance contest in under 120 words. It was added through **Add a task** with route Cloud only and the cloud permission checkbox ticked.
+
+- **Run this task only** opened exact-prompt inspection: requested route Cloud only, permission allowed, 645 UTF-8 bytes. Nothing was sent at that point.
+- **Run inspected task only** was used once. The draft reached review with SDK-reported source `in_cloud`, created 2026-11-15T20:46:20.438Z. The execution receipt recorded requested mode `cloud`, actual source `in_cloud` and 10,458 ms end-to-end. The response was 1,063 characters with the three steps, a checklist and uncertainties.
+- The banner changed to Cloud verified · Device unverified · last: in_cloud, and session attempts to 1 / 6. The other queued task (hybrid, no cloud permission) was not started.
+- **Read result** showed the text and the original-draft execution receipt. **Approve result** moved the task to Done at 2026-11-15T20:46:51.135Z with the notice "Result approved and saved locally. Content review only; no work executed."
+
+**Initialize connection** and **Verify App Check** were not clicked; the SDK initialized on the run path. The request succeeding with enforcement enabled is consistent with the earlier registered debug credential in this browser profile, but no separate attestation exchange was observed here. No console output was read.
+
+This is one successful cloud draft on the current revision. The earlier empty response used a different model setting and was not reproduced, so its cause remains unknown. Not covered: on-device or hybrid inference, production (reCAPTCHA) attestation, a hosted build, local result editing, the handoff packet and any file download. `LanguageModel` was present as a function in this Brave build; availability was not checked and no device model was prepared. The browser applied its own dark rendering to the page; the app defines no dark theme.
