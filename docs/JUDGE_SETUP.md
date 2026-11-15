@@ -75,11 +75,11 @@ Relay produces text, not autonomous external execution: no shell, GitHub operati
 
 ## Exact unresolved release/access items
 
-- [OWNER: chosen open-source license file, repository license metadata, dependency/asset permissions]. No license is selected by this draft.
+- License: Apache-2.0 was selected and added on November 16, 2026 ([LICENSE](../LICENSE)). [OWNER: dependency/asset permissions and third-party notices.]
 - [OWNER: public release revision including reviewed working-tree changes and compiled/packaged artifact instructions]. Local HEAD at preparation was 4d9d477; later working-tree changes were not committed here.
 - [OWNER: verified hosted URL OR functioning downloadable test-build access, with enforced App Check and no private debug-token distribution].
 - [OWNER: actual supported device result, observed hybrid/cloud source and end-to-end browser edit/criteria/approval/save acceptance]. Historical cloud observations and synthetic offline passes are not replacements.
 - [OWNER: free/unrestricted judge access duration and support contact]. Today's rules/dates review has a judging-date discrepancy; conservatively preserve access at least through December 17, 2026, 07:00 JST and resolve organizer changes.
 - [OWNER: public English YouTube demo, completed existing-work/IP disclosures, eligible team and final legal/submission review]. Nothing was deployed, recorded, registered or submitted by this guide.
 
-See [submission draft](SUBMISSION_DRAFT.md) for paste-ready project text and unresolved owner fields. Final contest submission remains conditional on an actually working qualifying app.
+Hosting steps are in [release readiness](RELEASE_READINESS.md#deploying-to-firebase-hosting). See [submission draft](SUBMISSION_DRAFT.md) for paste-ready project text and unresolved owner fields. Final contest submission remains conditional on an actually working qualifying app.

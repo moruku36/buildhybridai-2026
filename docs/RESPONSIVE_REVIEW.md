@@ -22,3 +22,15 @@ Actual mobile rendering, browser zoom, native select sizing, touch interaction a
 3. Inspect local result editing and approved handoff text/packet views. Check readable/selectable textarea sizing, vertical resizing and access to all actions in a short viewport. Do not invoke inference or download merely to inspect layout.
 
 These are proposed acceptance steps, not executed checks or permission to exceed the trial limit. See also [keyboard-navigation changes and limits](KEYBOARD_ACCESSIBILITY.md).
+
+## Readability pass — November 16, 2026
+
+`src/style.css` was rewritten in readable (non-minified) form and `src/main.js` gained small markup hooks. Labels, behaviour, storage and prompts are unchanged, and the DOM order of interactive elements is preserved.
+
+- Body text is 14px with a 12px minimum (previously 9–11px in places); muted text colours were darkened.
+- Toolbar actions are grouped as Queue, Board data and Connection setup. A coloured dot shows paused versus working.
+- The notice is a bordered callout: blue for the idle hint, amber for attention messages.
+- Stats are tiles. Board columns carry a state colour on the top edge, and card actions sit in one wrapping row.
+- At 650 CSS pixels and below, the sidebar collapses to a top bar, toolbar buttons fill the width, and the board scrolls one column at a time. The five workflow states are still all present.
+
+Unlike the earlier CSS-only change above, this pass was viewed in a browser: at 1360 and 375 CSS pixels, covering the board, **Preview workflow** and the result-review dialog, with no page-level horizontal overflow and no console errors. That check used the JavaScript preview core. Screens during live execution, browser zoom, real mobile devices, touch and screen readers remain unverified.
