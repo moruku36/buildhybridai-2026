@@ -46,6 +46,6 @@ These are owner actions. They need a Firebase login and change a public site.
 ## Still open
 
 - App Check production registration. An earlier note recorded the console's reCAPTCHA v3 controls as disabled; without a registered provider the hosted app cannot pass enforced App Check.
-- A successful live draft on the current revision. The last recorded cloud attempt returned no text; the reported reason is now surfaced so the cause can be identified on the next attempt.
+- ~~A successful live draft on the current revision.~~ Done later on November 16 with a development debug credential: one cloud draft was generated, reviewed and approved ([record](LIVE_VALIDATION.md#current-revision-cloud-draft--review--approval-brave-november-16-2026)). The earlier empty response was not reproduced and its cause is still unknown.
 - On-device and hybrid inference on a supported Chrome/device.
 - A hosted judge URL, the public demo video, existing-work and eligibility disclosures, and the submission itself.
