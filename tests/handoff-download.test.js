@@ -2,6 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 import {JSDOM} from 'jsdom';
+import {prepareIssueTask} from '../src/issue-intake.js';
 
 const bundle=await build({
  entryPoints:['src/main.js'],bundle:true,write:false,format:'esm',
@@ -28,8 +29,9 @@ test('a locally edited and reapproved draft downloads its inspected snapshot, th
  }}});
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
  w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
+ const prepared=prepareIssueTask({title:'Synthetic public handoff',goal:'Public demo task',constraints:'Public data only',acceptanceCriteria:'Result names one verifiable step',priority:1});
  const original={
-  id:'public-handoff',kind:'ai',title:'Synthetic public handoff',brief:'Public demo task',
+  id:'public-handoff',kind:'ai',title:prepared.title,brief:prepared.brief,
   priority:1,sequence:0,state:'review',mode:'hybrid',cloudAllowed:true,
   result:{text:'Original synthetic draft',source:'in_cloud',createdAt:'2026-11-12T10:00:00Z',
    executionReceipt:{version:1,requestedMode:'hybrid',actualSource:'in_cloud',elapsedMs:420}},
@@ -54,6 +56,9 @@ test('a locally edited and reapproved draft downloads its inspected snapshot, th
  await button(w,'Save local edit').onclick();
  button(w,'Read result').click();
  assert.equal(button(w,'Show approved handoff packet'),undefined);
+ const criterion=w.document.querySelector('dialog #criterion-0');
+ assert.equal(criterion.value,'unverified');
+ criterion.value='addressed';
  await button(w,'Approve result').onclick();
  button(w,'Read result').click();
  await button(w,'Show approved handoff packet').onclick();
@@ -68,24 +73,49 @@ test('a locally edited and reapproved draft downloads its inspected snapshot, th
  assert.equal(packet.provenance.humanEdited,true);
  assert.ok(packet.provenance.approvedAt);
  assert.match(packet.notice,/not authority to execute/);
+ assert.deepEqual(packet.draftContentReview.items,[{text:'Result names one verifiable step',status:'addressed'}]);
  const before=w.localStorage.getItem(key),download=button(w,'Download inspected packet');
  await download.onclick();
  assert.equal(file.type,'application/json;charset=utf-8');
  assert.equal(await file.text(),inspected);
  assert.deepEqual(downloads,[{href:'blob:relay-synthetic-packet',name:'relay-approved-handoff.json'}]);
+ const dlg=area.closest('dialog');
+ assert.match(dlg.querySelector('[role=status]').textContent,/browser downloads/i);
+ assert.equal(dlg.querySelector('[role=alert]').textContent,'');
  assert.equal(w.localStorage.getItem(key),before);
  assert.equal(cleanup.length,1);cleanup[0].callback();
  assert.deepEqual(revoked,['blob:relay-synthetic-packet']);
+ // Explicit attempt whose anchor click throws: recoverable alert, prior success cleared, nothing extra downloaded.
+ const clickOk=w.HTMLAnchorElement.prototype.click;
+ w.HTMLAnchorElement.prototype.click=function(){throw Error('Blocked internal detail');};
+ await download.onclick();
+ w.HTMLAnchorElement.prototype.click=clickOk;
+ assert.equal(downloads.length,1,'no extra download');
+ assert.equal(dlg.querySelector('[role=status]').textContent,'');
+ assert.match(dlg.querySelector('[role=alert]').textContent,/copy/i);
+ assert.doesNotMatch(dlg.querySelector('[role=alert]').textContent,/Blocked internal detail/);
+ assert.equal(w.document.querySelector('#approved-handoff-packet').value,inspected);
+ assert.equal(w.localStorage.getItem(key),before);
+ assert.equal(cleanup.length,2);cleanup[1].callback();
+ assert.deepEqual(revoked,['blob:relay-synthetic-packet','blob:relay-synthetic-packet']);
+ // Explicit retry resets the alert and dispatches identical bytes.
+ await download.onclick();
+ assert.equal(downloads.length,2);
+ assert.equal(await file.text(),inspected);
+ assert.equal(dlg.querySelector('[role=alert]').textContent,'');
+ assert.match(dlg.querySelector('[role=status]').textContent,/browser downloads/i);
+ assert.equal(cleanup.length,3);cleanup[2].callback();
 
  // Another tab removes approval while this packet view is still open.
  const latest=JSON.parse(before);
  latest[0].state='review';
  delete latest[0].result.reviewApprovedAt;
  delete latest[0].result.humanEdit.approvedAt;
+ delete latest[0].result.criteriaReview;
  const changed=JSON.stringify(latest);
  w.localStorage.setItem(key,changed);
  await download.onclick();
- assert.equal(downloads.length,1);
+ assert.equal(downloads.length,2);
  assert.equal(w.document.querySelector('#approved-handoff-packet'),null);
  assert.match(w.document.querySelector('.notice').textContent,/Board changed in another tab/);
  assert.equal(w.localStorage.getItem(key),changed);

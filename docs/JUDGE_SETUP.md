@@ -50,7 +50,8 @@ The production output is dist/. The build:core script compiles the Rust core and
 | VITE_FIREBASE_API_KEY | Public Firebase Web app API key, not a secret Gemini API key. Use only the approved Web app configuration. |
 | VITE_FIREBASE_PROJECT_ID | Public project identifier. |
 | VITE_FIREBASE_APP_ID | Public Web app identifier. |
-| VITE_APPCHECK_SITE_KEY | Public registered reCAPTCHA v3 site key; required for production with the correct authorized origin. |
+| VITE_APPCHECK_ENTERPRISE_SITE_KEY | Optional public score-based reCAPTCHA Enterprise Web key from the same Firebase project, authorized for the production hostname(s) only (not localhost) and registered at App Check. Preferred over the v3 key when both are set. |
+| VITE_APPCHECK_SITE_KEY | Public registered reCAPTCHA v3 site key, used only when no Enterprise key is set; v3 registration may be unavailable in a given project. One of the two keys is required for production with the correct authorized origin. |
 | VITE_CLOUD_MODEL | An available cloud model confirmed in the evaluation project's Firebase AI Logic console; the template value is not proof of availability. |
 | VITE_APPCHECK_DEBUG | Development-only boolean; keep false for the intended production judge path. Never put a debug credential in it. |
 

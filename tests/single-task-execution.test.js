@@ -139,3 +139,31 @@ test('separate single-task starts share the existing six-attempt session limit',
  assert.deepEqual(saved(w).map(t=>t.state),['review','review','review','review','review','review','queued']);
  assert.match(w.document.querySelector('.notice').textContent,/session request limit/);
 });
+
+test('dashboard creates and inspects only the new task, then requires explicit approval before saving',async t=>{
+ const {w,control}=await boot(t,[task('already-queued-0')]);
+ const form=w.document.querySelector('.composer:not([hidden]) form');
+ const generate=form.querySelector('button[data-action="generate"]');
+ assert.equal(form.querySelector('details').open,false);
+ assert.equal(form.querySelector('[data-action="queue"]').hidden,true);
+ form.elements.title.value='New dashboard task';
+ form.elements.brief.value='Use only these public test details.';
+ await form.onsubmit({preventDefault(){},currentTarget:form,submitter:generate});
+ assert.deepEqual(control.preparations,[]);
+ assert.deepEqual(control.calls,[]);
+ assert.match(w.document.querySelector('.inline-prompt pre').textContent,/New dashboard task/);
+ assert.doesNotMatch(w.document.querySelector('.inline-prompt pre').textContent,/already-queued-0/);
+ const execute=w.document.querySelector('.inline-prompt .primary');
+ await execute.onclick();
+ const board=saved(w);
+ assert.deepEqual(board.map(task=>task.state),['queued','review']);
+ assert.equal(board[1].mode,'local');
+ assert.equal(board[1].cloudAllowed,false);
+ assert.deepEqual(control.calls,[board[1].id]);
+ assert.equal(w.document.querySelector('.focus [data-act="packet"]'),null);
+ await w.document.querySelector('.inline-result [data-act=approve-result]').onclick();
+ assert.equal(saved(w)[1].state,'done');
+ await w.document.querySelector('.focus [data-act="packet"]').onclick();
+ assert.equal(JSON.parse(w.document.querySelector('#approved-handoff-packet').value).approvedText,'Synthetic draft, not live inference');
+ assert.deepEqual(control.calls,[board[1].id]);
+});

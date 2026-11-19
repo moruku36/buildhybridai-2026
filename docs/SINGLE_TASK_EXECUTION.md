@@ -31,6 +31,24 @@ automatic fallback experiment, or proof that a browser supports on-device AI.
 6. Other queued tasks stay queued. Run another task or explicitly start the
    queue when ready. To retry a blocked task, use **Return to queue** first.
 
+## Dashboard shortcuts
+
+- **Review prompt** opens the exact prompt inline for the selected task. A
+  new on-device task is saved locally first; reviewing never starts inference.
+- **Review Google prompt** previews a new cloud-only draft without saving it
+  or loading Firebase. **Send to Google for a draft** then saves and sends
+  only that inspected task through Firebase AI Logic. This action grants
+  permission for this exact request only; saved cloud permission stays off.
+  After a failed send, inspect the error and quota, then use **Return to queue →
+  Review prompt** for a fresh one-request confirmation on that same cloud-only
+  task. Hybrid fallback still requires permission in **Edit execution**. Nothing
+  is retried automatically. A board refresh or a change to the previewed task’s
+  route or permission closes its old prompt; review it again before sending.
+- **Approve and save locally** is separate from the request. It does not
+  download a packet, authorize downstream execution or publish anything.
+  **View all tasks** opens the full board. Explicit batch execution and
+  App Check tools are under **Advanced**.
+
 ## Existing boundaries are unchanged
 
 - Start is disabled without a matching Rust/WASM core or Web Locks support.

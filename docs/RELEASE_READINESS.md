@@ -29,8 +29,8 @@ Some Windows machines block unsigned toolchain binaries through application-cont
 
 These are owner actions. They need a Firebase login and change a public site.
 
-1. Put the public Web app configuration in ignored `.env.local` (names in `.env.example`). A production build needs a registered reCAPTCHA v3 site key in `VITE_APPCHECK_SITE_KEY`; the development debug path is removed from builds.
-2. In the Firebase console, register the Web app with App Check (reCAPTCHA v3) and add the Hosting domain (`<project>.web.app`) to the reCAPTCHA key's allowed domains. Keep AI Logic enforcement on.
+1. Put the public Web app configuration in ignored `.env.local` (names in `.env.example`). A production build needs a registered public site key: a score-based reCAPTCHA Enterprise Web key in `VITE_APPCHECK_ENTERPRISE_SITE_KEY` (preferred when set), or an existing registered reCAPTCHA v3 key in `VITE_APPCHECK_SITE_KEY`. The development debug path is removed from builds.
+2. For a new setup, create or select a score-based reCAPTCHA Enterprise Web key in the same Google Cloud/Firebase project, restricted to the production hostname(s) (for example `<project>.web.app`); do not add `localhost`. Register the Web app with that key in Firebase App Check. If using an existing v3 registration, keep the matching key and confirm its domain allowlist covers the intended host. Keep AI Logic enforcement on in either case.
 3. Make sure `public/relay_core.wasm` exists (`npm run build:core`, or the CI artifact above).
 4. Build and deploy:
 
@@ -45,7 +45,7 @@ These are owner actions. They need a Firebase login and change a public site.
 
 ## Still open
 
-- App Check production registration. An earlier note recorded the console's reCAPTCHA v3 controls as disabled; without a registered provider the hosted app cannot pass enforced App Check.
+- App Check production registration. An earlier note recorded the console's classic reCAPTCHA v3 registration controls as disabled, while Enterprise registration was available; the Web app is not yet registered. Without a registered provider the hosted app cannot pass enforced App Check.
 - ~~A successful live draft on the current revision.~~ Done later on November 16 with a development debug credential: one cloud draft was generated, reviewed and approved ([record](LIVE_VALIDATION.md#current-revision-cloud-draft--review--approval-brave-november-16-2026)). The earlier empty response was not reproduced and its cause is still unknown.
 - ~~On-device and hybrid inference on a supported Chrome/device.~~ Done on November 16: `on_device` responses for a device-only and a hybrid task in Chrome 157 ([record](LIVE_VALIDATION.md#on-device-and-device-preferred-hybrid-inference-chrome-november-16-2026)), and cloud fallback plus device-only fail-closed behaviour in Brave ([record](LIVE_VALIDATION.md#device-unavailable-behaviour-and-hybrid-cloud-fallback-brave-november-16-2026)). One machine, development App Check only.
 - A hosted judge URL, the public demo video, existing-work and eligibility disclosures, and the submission itself.
