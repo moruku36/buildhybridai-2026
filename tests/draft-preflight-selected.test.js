@@ -22,7 +22,7 @@ const bundle=await build({
   b.onLoad({filter:/.*/,namespace:'offline'},args=>{
    if(args.path==='firebase/app')return {contents:'export function initializeApp(){return {};} '};
    if(args.path==='firebase/app-check')return {contents:`
-    export class ReCaptchaV3Provider{} export class CustomProvider{}
+    export class ReCaptchaV3Provider{} export class ReCaptchaEnterpriseProvider{} export class CustomProvider{}
     export function initializeAppCheck(){return {};}
     export async function getToken(){return {};}
    `};

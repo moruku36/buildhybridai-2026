@@ -1,12 +1,12 @@
 import {generateInspectedDraft} from './draft-preflight.js';
 import {deviceModelOptions} from './device-options.js';
 import {initializeApp} from 'firebase/app';
-import {initializeAppCheck,ReCaptchaV3Provider,CustomProvider,getToken} from 'firebase/app-check';
+import {initializeAppCheck,ReCaptchaV3Provider,ReCaptchaEnterpriseProvider,CustomProvider,getToken} from 'firebase/app-check';
 import {getAI,getGenerativeModel,GoogleAIBackend,InferenceMode} from 'firebase/ai';
 import {enableLocalAppCheckDebug,isLocalDebugRequested} from './app-check-debug.js';
 const env=import.meta.env;
 export const debugRequested=import.meta.env.DEV ? isLocalDebugRequested({dev:import.meta.env.DEV,optIn:import.meta.env.VITE_APPCHECK_DEBUG,hostname:globalThis.location?.hostname}) : false;
-export const configured=Boolean(env.VITE_FIREBASE_API_KEY&&env.VITE_FIREBASE_PROJECT_ID&&env.VITE_FIREBASE_APP_ID&&(env.VITE_APPCHECK_SITE_KEY||debugRequested));
+export const configured=Boolean(env.VITE_FIREBASE_API_KEY&&env.VITE_FIREBASE_PROJECT_ID&&env.VITE_FIREBASE_APP_ID&&(env.VITE_APPCHECK_ENTERPRISE_SITE_KEY||env.VITE_APPCHECK_SITE_KEY||debugRequested));
 let ai,app,appCheck;
 export function initializeConnection(){
  if(!configured)throw Error('Firebase and App Check are not configured. No AI request was sent.');
@@ -16,6 +16,9 @@ export function initializeConnection(){
  let provider;
  if(import.meta.env.DEV && debugRequested){
   provider=new CustomProvider({getToken:async()=>{throw Error('Relay debug-only provider cannot issue production attestation');}});
+ }else if(env.VITE_APPCHECK_ENTERPRISE_SITE_KEY){
+  // Enterprise key takes precedence when supplied; no automatic fallback to v3 after selection.
+  provider=new ReCaptchaEnterpriseProvider(env.VITE_APPCHECK_ENTERPRISE_SITE_KEY);
  }else{provider=new ReCaptchaV3Provider(env.VITE_APPCHECK_SITE_KEY);}
  appCheck=initializeAppCheck(app,{provider,isTokenAutoRefreshEnabled:false});
  }

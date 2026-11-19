@@ -76,7 +76,7 @@ test('paused execution edits repair consent and blocked routes without running o
  await button(w,'Save execution settings').onclick();saved=JSON.parse(w.localStorage.getItem('relay-board-v1'))[0];assert.equal(saved.mode,'local');assert.equal(saved.cloudAllowed,false);
  dom.window.close();
 });
-test('sending a review back pauses after the current request and requires explicit restart',async()=>{
+test('sending a review back pauses after the current request and requires an inspected retry',async()=>{
  const base={title:'Synthetic task',brief:'Public test',priority:1,mode:'cloud',cloudAllowed:true};
  const {dom,w}=await boot([{...base,id:'review',sequence:0,state:'review',result:{text:'Existing draft',source:'in_cloud',createdAt:'2026-11-12'}},{...base,id:'running',sequence:1,state:'queued'}]);
  let finish,calls=0;w.onGenerate=()=>{calls++;return new Promise(resolve=>{finish=resolve})};
@@ -85,11 +85,16 @@ test('sending a review back pauses after the current request and requires explic
  assert.equal(calls,1);
  assert.equal([...w.document.querySelectorAll('button')].filter(b=>b.textContent==='Edit execution').every(b=>b.disabled),true);
  button(w,'Read result').onclick();await button(w,'Send back').onclick();
+ assert.match(w.document.querySelector('.notice').textContent,/When the queue has paused, use Review prompt/);
+ assert.equal(w.document.querySelector('.focus [data-act=run]').disabled,true);
+ assert.equal(w.document.activeElement,w.document.querySelector('.focus h2'));
  finish({text:'Second draft',source:'in_cloud',createdAt:'2026-11-12'});await running;
- assert.match(w.document.querySelector('.notice').textContent,/Queue paused; press Start queue/);
+ assert.match(w.document.querySelector('.notice').textContent,/Queue paused\./);
+ assert.doesNotMatch(w.document.querySelector('.notice').textContent,/Start queue/);
  assert.equal(calls,1);let saved=JSON.parse(w.localStorage.getItem('relay-board-v1'));assert.equal(saved[0].state,'queued');assert.equal(saved[0].result,undefined);assert.equal(saved[1].state,'review');
  w.onGenerate=async()=>{calls++;return {text:'Explicit re-draft',source:'in_cloud',createdAt:'2026-11-12'}};
- await button(w,'Start queue').onclick();assert.equal(calls,2);
+ await w.document.querySelector('.focus [data-act=run]').onclick();assert.equal(calls,1);
+ await button(w,'Send to Google for a draft').onclick();assert.equal(calls,2);
  saved=JSON.parse(w.localStorage.getItem('relay-board-v1'));assert.equal(saved[0].state,'review');
  dom.window.close();
 });
@@ -200,7 +205,7 @@ test('local checklist queue requires review before manual download, no Firebase 
  const form=w.document.querySelector('form');form.elements.title.value='../../Workshop';
  form.elements.brief.value='Fold paper\nTest flight';form.elements.kind.value='checklist';form.elements.kind.onchange();
  assert.equal(form.elements.mode.disabled,true);assert.equal(form.elements.consent.disabled,true);
- await form.onsubmit({preventDefault(){},currentTarget:form});
+ await form.onsubmit({preventDefault(){},currentTarget:form,submitter:form.querySelector('[data-action=queue]')});
  await button(w,'Start queue').onclick();
  let t=JSON.parse(w.localStorage.getItem('relay-board-v1'))[0];
  assert.equal(t.state,'review');assert.equal(t.result.source,'LOCAL_DETERMINISTIC');
@@ -234,7 +239,7 @@ test('local JSON check retains failed structured evidence through review/reload 
  const input='[\n {"id":"a","title":"<img src=x onerror=alert(1)>","priority":9}\n]';
  form.elements.title.value='Backlog check';form.elements.brief.value=input;form.elements.kind.value='json-check';form.elements.kind.onchange();
  assert.equal(form.elements.mode.disabled,true);assert.equal(form.elements.consent.disabled,true);
- await form.onsubmit({preventDefault(){},currentTarget:form});await button(w,'Start queue').onclick();
+ await form.onsubmit({preventDefault(){},currentTarget:form,submitter:form.querySelector('[data-action=queue]')});await button(w,'Start queue').onclick();
  let saved=JSON.parse(w.localStorage.getItem('relay-board-v1')),t=saved[0];
  assert.equal(t.brief,input);assert.equal(t.state,'review');assert.equal(t.result.data.valid,false);
  assert.equal(t.result.data.issues[0].path,'$[0].priority');assert.equal(w.aiModuleLoads,undefined);
@@ -315,8 +320,11 @@ test('edit and approval persistence failures roll back state while retaining uns
  button(w,'Read result').onclick();button(w,'Edit result locally').onclick();w.document.querySelector('#human-result-text').value='Saved after retry';
  const set=storage.setItem;storage.setItem=()=>{throw Error('Quota')};
  await button(w,'Save local edit').onclick();assert.equal(w.document.querySelector('#human-result-text').value,'Saved after retry');
+ assert.match(w.document.querySelector('dialog [role=alert]').textContent,/Edit not saved/);
+ assert.match(w.document.querySelector('dialog [role=alert]').textContent,/still in the editor/);
+ assert.match(w.document.querySelector('dialog [role=alert]').textContent,/Storage is unavailable or full/);
  assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].state,'done');assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].result.humanEdit,undefined);
- storage.setItem=set;await button(w,'Save local edit').onclick();button(w,'Read result').onclick();
+ storage.setItem=set;await button(w,'Save local edit').onclick();assert.equal(w.document.querySelector('dialog [role=alert]'),null);button(w,'Read result').onclick();
  storage.setItem=()=>{throw Error('Quota')};await button(w,'Approve result').onclick();
  assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].state,'review');assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].result.humanEdit.approvedAt,undefined);
  storage.setItem=set;await button(w,'Approve result').onclick();assert.equal(JSON.parse(storage.getItem('relay-board-v1'))[0].state,'done');dom.window.close();
