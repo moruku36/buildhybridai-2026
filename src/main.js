@@ -1,4 +1,4 @@
-import {createExecutionReceipt,executionReceiptLines} from './execution-receipt.js';
+import {createExecutionReceipt,executionReceiptLines,actualInferenceLabel} from './execution-receipt.js';
 import {inspectDraft,assertDraftCurrent} from './draft-preflight.js';
 import {criteriaControls} from './criteria-review.js';
 import {handoffPacket} from './handoff-packet.js';
@@ -9,6 +9,7 @@ import {showIssueIntake} from './issue-intake.js';
 import {buildJsonReport} from './json-check.js';
 import {buildChecklist,approvedMarkdown,LOCAL_SOURCE} from './local-artifact.js';
 import {archiveRejectedDraft} from './draft-history.js';
+import {queueActionLabel} from './queue-action-label.js';
 import './style.css';
 import {loadCore,move,nextTask,recover,validateTasks} from './policy.js';
 import {recordInference,runtimeStatus} from './runtime-status.js';
@@ -70,6 +71,13 @@ let inlineDraft=null,inlineResultId=null,inlineReview=null,focusAction=null;
 const liveStatus=node('div',undefined,'sr-only');
 liveStatus.setAttribute('role','status');
 $('#app').before(liveStatus);
+const connectionStatus=node('div',undefined,'sr-only');
+connectionStatus.setAttribute('role','status');
+connectionStatus.setAttribute('aria-live','polite');
+connectionStatus.setAttribute('aria-atomic','true');
+$('#app').before(connectionStatus);
+let connectionNotice='';
+function announceConnection(message){connectionNotice=message||'';connectionStatus.textContent=connectionNotice;}
 const routeLabel=t=>isReviewFixture(t)?'TEST_FIXTURE · not AI':t.kind==='json-check'?'▦ Local JSON check · no AI':t.kind==='checklist'?'▦ Local checklist · no AI':t.mode==='local'?'◉ On device':t.mode==='hybrid'?'◈ Hybrid':'☁ Cloud';
 const compareTaskRank=(a,b)=>core.rank(a.priority,a.sequence)-core.rank(b.priority,b.sequence);
 const taskStateLabels={queued:'Ready',running:'Running',review:'Needs your review',done:'Approved',blocked:'Needs attention'};
@@ -286,8 +294,21 @@ function renderQueueCard(t,state){
   const one=actionButton('Run this task only','o-'+t.id,()=>isLocalTask(t)?run(t.id):showDraftInspection(t),undefined,active||!rust||!locksAvailable);one.title=isLocalTask(t)?'Run only this local task, then pause.':'Inspect this task’s exact AI prompt before running it alone.';a.append(one);
   a.append(actionButton('Change priority','p-'+t.id,()=>withBoardWrite(()=>{t.priority=t.priority%3+1;persist();render();}),undefined,active));
  }
- if(state==='blocked')a.append(actionButton('Return to queue','b-'+t.id,()=>withBoardWrite(()=>{move(core,t,'retry');delete t.error;persist();render();}),undefined,active));
+ if(state==='blocked'){
+  const task=t;
+  const retry=retryButton => withBoardWrite(() => {
+    move(core, task, 'retry');
+    delete task.error;
+    persist();
+    notice = 'Task returned to the queue. Nothing has run.';
+    const hadFocus = document.activeElement === retryButton;
+    render();
+    if (hadFocus && document.activeElement === document.body) findFocusTarget('a:f-' + task.id)?.focus();
+  });
+  a.append(actionButton('Return to queue','b-'+t.id,retry,undefined,active));
+ }
  a.append(actionButton('Open task','f-'+t.id,()=>openTask(t)));
+ for(const button of a.querySelectorAll('button'))button.setAttribute('aria-label',queueActionLabel(button.textContent,t.title));
  c.append(a);return c;
 }
 function render(){
@@ -328,9 +349,10 @@ function render(){
  const toolsSummary=node('summary','Connections and tools');toolsSummary.dataset.act='tools';td.append(toolsSummary);
  if(!active)td.append(st);
  const tc=node('div',undefined,'controls');td.append(tc);const dG=group(tc,'Board data'),sG=group(tc,'Connection setup');
- sG.append(actionButton(checkingDevice?'Checking device…':'Check device availability','diag',async()=>{if(checkingDevice||active)return;checkingDevice=true;log('Checking browser availability only. No model creation, download, inference or Firebase initialization.');try{const result=await checkDeviceAvailability(globalThis.LanguageModel);notice=describeDeviceAvailability(result)+' Checked Relay text-only options: English text input and output.';}catch{notice='Device availability is unknown. No inference was run.';}finally{checkingDevice=false;render();}},undefined,active||checkingDevice));
- sG.append(actionButton('Initialize connection','connect',async b=>{b.disabled=true;try{api=await import('./ai.js');if(api.debugRequested&&!globalThis.confirm('Initialize local App Check debugging? Firebase may generate and store a private debug credential in this browser and show it in the developer console. Keep it private. No model inference will run.'))return;const result=api.initializeConnection();log(result.debug?'Local debug initialized. Keep the browser console private; token registration is a separate authorized setup step. No inference sent.':'Firebase SDK initialized. Attestation and inference are not verified. No inference sent.');}catch(e){log(String(e.message||e));}finally{render();}},undefined,active));
- sG.append(actionButton('Verify App Check','verify',async b=>{b.disabled=true;try{if(!globalThis.confirm('Have you completed App Check registration? Verify once with Firebase now. This sends app attestation to Firebase, but runs no model inference.'))return;api=await import('./ai.js');await api.verifyAppCheck();log('App Check verified once. No model inference sent; inference remains unverified.');}catch{log('App Check verification failed. Check registration and configuration. No automatic retry or model inference.');}finally{render();}},undefined,active));
+ sG.append(actionButton(checkingDevice?'Checking device…':'Check device availability','diag',async()=>{if(checkingDevice||active)return;checkingDevice=true;announceConnection('Checking browser availability only. No model creation, download, inference or Firebase initialization.');render();try{const result=await checkDeviceAvailability(globalThis.LanguageModel);announceConnection(describeDeviceAvailability(result)+' Checked Relay text-only options: English text input and output.');}catch{announceConnection('Device availability is unknown. No inference was run.');}finally{checkingDevice=false;render();}},undefined,active||checkingDevice));
+ sG.append(actionButton('Initialize connection','connect',async b=>{b.disabled=true;try{api=await import('./ai.js');if(api.debugRequested&&!globalThis.confirm('Initialize local App Check debugging? Firebase may generate and store a private debug credential in this browser and show it in the developer console. Keep it private. No model inference will run.'))return;const result=api.initializeConnection();const message=result.debug?'Local debug initialized. Keep the browser console private; token registration is a separate authorized setup step. No inference sent.':'Firebase SDK initialized. Attestation and inference are not verified. No inference sent.';announceConnection(message);}catch(e){const message=String(e.message||e);announceConnection(message);}finally{render();}},undefined,active));
+ sG.append(actionButton('Verify App Check','verify',async b=>{b.disabled=true;try{if(!globalThis.confirm('Have you completed App Check registration? Verify once with Firebase now. This sends app attestation to Firebase, but runs no model inference.'))return;api=await import('./ai.js');await api.verifyAppCheck();const message='App Check verified once. No model inference sent; inference remains unverified.';announceConnection(message);}catch{const message='App Check verification failed. Check registration and configuration. No automatic retry or model inference.';announceConnection(message);}finally{render();}},undefined,active));
+ if(connectionNotice){const connectionHint=node('p',connectionNotice,'hint');connectionHint.style.flexBasis='100%';sG.append(connectionHint);}
  dG.append(actionButton('Export','export',()=>{const url=URL.createObjectURL(new Blob([JSON.stringify({version:1,tasks},null,2)],{type:'application/json'}));const a=node('a');a.href=url;a.download='relay-board.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}));
  td.append(node('p',rust?'◉ Rust / WASM core':'○ Preview core · Rust missing or outdated','engine'));
  const stats=node('section',undefined,'stats');
@@ -575,8 +597,9 @@ function renderResult(t,d,inline=false){
  }else d.setAttribute('aria-label',t.title);
  const original=t.result;
  d.append(head,node('p',`${original.humanEdit?'Human-edited version; original source: ':''}${original.source} · Original created: ${original.createdAt}`),
-  node('pre',reviewedText(t)),node('h3','Original draft execution'));
+  node('h3','Original draft execution'));
  for(const line of executionReceiptLines(original))d.append(node('p',line));
+ d.append(node('pre',reviewedText(t)));
  if(original.humanEdit){
   const edit=original.humanEdit;
   d.append(node('p','Human-edited locally · '+edit.editedAt+(edit.approvedAt?' · Reapproved '+edit.approvedAt:' · Approval required')));
@@ -684,7 +707,7 @@ async function runLocked(taskId,inspected,oneTimeCloudTask=null){
    if(!lockHeld||!active||!tasks.includes(task)||task.state!=='running'||tasks.some(t=>t!==task&&t.state==='running')||calls>6)throw Error('Execution is stale, interrupted or over the session limit. No inference sent.');
    assertDraftCurrent(executionTask(),inspection,'running');
   });task.result.executionReceipt=createExecutionReceipt(requestedMode,task.result.source,performance.now()-startedAt);task.result.source=task.result.executionReceipt.actualSource;recordInference(observed,task.result.source);}
-  move(core,task,'result');notice=local?'Local result ready for review. No AI or external work executed.':`Draft ready for review. Actual inference: ${task.result.source}.`;
+  move(core,task,'result');notice=local?'Local result ready for review. No AI or external work executed.':`Draft ready for review. Actual inference: ${actualInferenceLabel(task.result)}.`;
   if(stop)notice+=' Queue paused.';
  }catch(e){if(!tasks.includes(task))throw e;move(core,task,'fail');task.error=String(e.message||e);notice=local?'Local formatting failed. No automatic retry.':'Request failed or dispatch stopped. No automatic retry; inspect the error and quota before retrying.';stop=true;}
  if(taskId!==undefined){stop=true;notice+=' Other queued tasks were not started.';}

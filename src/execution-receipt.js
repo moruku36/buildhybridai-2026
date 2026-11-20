@@ -17,6 +17,16 @@ export function validateExecutionReceipts(tasks){
   validateExecutionReceipt(task.result?.executionReceipt,task.result?.source);
  }
 }
+export function actualInferenceLabel(result) {
+  const receipt = result?.executionReceipt;
+  const actualSource = receipt?.actualSource;
+  const requestedMode = receipt?.requestedMode;
+
+  if (actualSource === 'on_device') return 'On device';
+  if (actualSource === 'in_cloud' && requestedMode === 'hybrid') return 'Cloud fallback';
+  if (actualSource === 'in_cloud') return 'Cloud';
+  return 'Unknown';
+}
 export function executionReceiptLines(result){
  const receipt=result.executionReceipt;
  if(!receipt)return [['PREVIEW','TEST_FIXTURE','LOCAL_DETERMINISTIC'].includes(result.source)?'No AI execution receipt: this is a preview, fixture or local result.':'No execution receipt recorded. Requested route and elapsed time are unknown.'];

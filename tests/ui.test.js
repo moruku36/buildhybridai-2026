@@ -15,7 +15,8 @@ test('device diagnosis is manual, does not create a model and does not verify in
  w.LanguageModel={availability:async()=>{calls++;return 'downloadable'},create:()=>{creates++;throw Error('forbidden')}};
  assert.equal(calls,0);await button(w,'Check device availability').onclick();
  assert.equal(calls,1);assert.equal(creates,0);
- assert.match(w.document.querySelector('.notice').textContent,/downloadable, but not ready/);
+ assert.match(w.document.querySelector('[aria-label="Connection setup"] .hint').textContent,/downloadable, but not ready/);
+ assert.doesNotMatch(w.document.querySelector('.notice').textContent,/downloadable, but not ready/);
  assert.match(w.document.querySelector('.status').textContent,/AI not connected/);
  dom.window.close();
 });
