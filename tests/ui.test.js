@@ -10,6 +10,34 @@ function dialogShims(w){w.HTMLDialogElement.prototype.showModal=function(){this.
 test('board preview, review, requeue, approve, safe rendering, consent and persistence',async()=>{const savedTasks=['Saved fixture one','Saved fixture two'].map((title,sequence)=>({id:'saved-'+sequence,title,brief:'Fictional test brief',priority:2,sequence,state:'queued',mode:'local',cloudAllowed:false}));const {dom,w,ms}=await boot(JSON.stringify(savedTasks));dialogShims(w);assert.equal(button(w,'Start queue').disabled,true);assert.match(w.document.body.textContent,/AI not connected/);button(w,'Preview workflow').click();button(w,'Read result').click();assert.match(w.document.querySelector('dialog pre').textContent,/PREVIEW FIXTURE/);button(w,'Close').click();assert.equal(w.document.querySelector('dialog'),null);button(w,'Read result').click();button(w,'Send back').click();assert.equal(JSON.parse(w.localStorage.getItem('relay-board-v1'))[0].state,'queued');button(w,'Preview workflow').click();button(w,'Read result').click();button(w,'Approve result').click();assert.equal(JSON.parse(w.localStorage.getItem('relay-board-v1'))[0].state,'done');let form=w.document.querySelector('form');form.elements.title.value='<img src=x onerror=alert(1)>';form.elements.brief.value='Public sample';form.elements.mode.value='hybrid';form.elements.mode.onchange();await form.onsubmit({preventDefault(){},currentTarget:form,submitter:form.querySelector('[data-action="queue"]')});assert.match(w.document.querySelector('.notice').textContent,/permission checkbox/);form=w.document.querySelector('form');form.elements.title.value='<img src=x onerror=alert(1)>';form.elements.brief.value='Public sample';form.elements.mode.value='hybrid';form.elements.mode.onchange();form.elements.consent.checked=true;form.elements.consent.onchange();await form.onsubmit({preventDefault(){},currentTarget:form,submitter:form.querySelector('[data-action="queue"]')});assert.equal(w.document.querySelector('img'),null);assert.match(w.document.body.textContent,/<img src=x/);const saved=w.localStorage.getItem('relay-board-v1');assert.equal(JSON.parse(saved).length,3);const reload=await boot(saved);assert.match(reload.w.document.body.textContent,/<img src=x/);console.log(`DOM startup ${ms.toFixed(1)} ms (jsdom, not browser paint)`);reload.dom.window.close();dom.window.close();});
 test('corrupt and interrupted storage are handled honestly',async()=>{const bad=await boot('{broken');assert.match(bad.w.document.body.textContent,/Saved board was invalid/);assert.equal(bad.w.localStorage.getItem('relay-board-v1'),'{broken');bad.dom.window.close();const saved=JSON.stringify([{id:'x',title:'Interrupted',brief:'Public',priority:1,sequence:0,state:'running',mode:'local',cloudAllowed:false}]);const {dom,w}=await boot(saved);assert.match(w.document.body.textContent,/Interrupted. Retry explicitly/);assert.ok(button(w,'Return to queue'));dom.window.close();});
 
+for(const [label,error,expectedHint] of [
+ ['numeric',1,/Check device availability under Advanced/],
+ ['SDK string','AI: Local LanguageModel API not available in this environment. (AI/api-not-enabled)',/^On-device AI is not ready\. Check device availability/],
+]){
+ test('a persisted '+label+' error leaves the selected device-only task recoverable',async t=>{
+  const task={
+   id:'saved-device-task',title:'Saved device task',brief:'Fictional test brief',
+   priority:1,sequence:0,state:'blocked',kind:'ai',mode:'local',cloudAllowed:false,error,
+  };
+  const {dom,w}=await boot(JSON.stringify([task]));
+  t.after(()=>dom.window.close());
+  const workspace=w.document.querySelector('[aria-labelledby="ws-h"]');
+  assert.equal(workspace.querySelector('#ws-h').textContent,task.title);
+  assert.equal(workspace.querySelector('.error').textContent,String(error));
+  assert.match(workspace.querySelector('.hint').textContent,expectedHint);
+
+  const retry=workspace.querySelector('[data-act="return"]');
+  assert.equal(retry.disabled,false);
+  await retry.onclick();
+  const [saved]=JSON.parse(w.localStorage.getItem('relay-board-v1'));
+  assert.equal(saved.state,'queued');
+  assert.equal(Object.hasOwn(saved,'error'),false);
+  assert.equal(saved.mode,'local');
+  assert.equal(saved.cloudAllowed,false);
+  assert.equal(w.document.querySelector('#ws-h').textContent,task.title);
+ });
+}
+
 test('device diagnosis is manual, does not create a model and does not verify inference',async()=>{
  const {dom,w}=await boot();let calls=0,creates=0;
  w.LanguageModel={availability:async()=>{calls++;return 'downloadable'},create:()=>{creates++;throw Error('forbidden')}};
