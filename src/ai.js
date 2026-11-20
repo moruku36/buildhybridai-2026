@@ -31,6 +31,7 @@ export async function verifyAppCheck(){
  return {verified:true};
 }
 export function prepareModel(mode,onProgress){
+ if(mode==='local'&&!globalThis.LanguageModel)throw new Error('On-device AI is unavailable in this browser. No request was sent and no cloud fallback was used. Check device availability or use a browser with on-device support.');
  initializeConnection();
  if(!ai)ai=getAI(app,{backend:new GoogleAIBackend()});
  const modes={local:InferenceMode.ONLY_ON_DEVICE,hybrid:InferenceMode.PREFER_ON_DEVICE,cloud:InferenceMode.ONLY_IN_CLOUD};

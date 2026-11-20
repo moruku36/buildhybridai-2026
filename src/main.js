@@ -257,7 +257,8 @@ function renderCurrentTask(t){
  if(t.feedback)s.append(node('p','Revision feedback: '+t.feedback.slice(0,300),'card-feedback'));
  if(t.error){
   s.append(node('p',t.error,'error'));
-  if(!isLocalTask(t)&&t.mode!=='cloud')s.append(node('p','Check device availability under Advanced → Connections and tools, or use Edit execution to choose a different route.','hint'));
+  if(!isLocalTask(t)&&t.mode==='local'&&typeof t.error==='string'&&t.error.endsWith('(AI/api-not-enabled)'))s.append(node('p','On-device AI is not ready. Check device availability, then use Return to queue to keep this task once ready.','hint'));
+  else if(!isLocalTask(t)&&t.mode!=='cloud')s.append(node('p','Check device availability under Advanced → Connections and tools, or use Edit execution to choose a different route.','hint'));
  }
  if(!isLocalTask(t)&&t.mode!=='local')s.append(node('p','Google via Firebase AI Logic · permission '+(t.cloudAllowed?'on':'off')+'. Requests may use project quota.','hint'));
  if(t.result)s.append(node('span',t.result.source,'source'));
@@ -276,7 +277,7 @@ function renderCurrentTask(t){
  }
  else{next=!local&&t.mode==='cloud'&&!t.cloudAllowed
   ?'To try Google again, return to queue and review a fresh one-request prompt. Edit execution to change routes.'
-  :'Needs attention. Return it to the queue, or edit its execution first.';a.append(actionButton('Return to queue','return',()=>withBoardWrite(()=>{move(core,t,'retry');delete t.error;persist();focusWorkspaceHeading=true;render();}),'primary',active||!locksAvailable));if(!local)a.append(edit());}
+  :'Needs attention. Return it to the queue, or edit its execution first.';a.append(actionButton('Return to queue','return',()=>withBoardWrite(()=>{move(core,t,'retry');delete t.error;persist();currentTaskId=t.id;focusWorkspaceHeading=true;render();}),'primary',active||!locksAvailable));if(!local)a.append(edit());}
  a.append(actionButton('New task','new',()=>{inlineDraft=null;showComposer=true;currentTaskId=null;notice='';focusWorkspaceHeading=true;render();}));
  s.append(node('p',next,'next'),a);return s;
 }
@@ -414,7 +415,10 @@ function showExecutionSettings(t,source){
   if(active||isLocalTask(t)||!['queued','blocked'].includes(t.state))return;
   t.mode=select.value;t.cloudAllowed=t.mode!=='local'&&consent.checked;
   notice='Execution settings saved. No request sent. '+next;
-  persist();d.close();render();
+  persist();
+  if(source==='inline-preview'&&inlineDraft?.task===t)closeInlineDraft(false);
+  if(source==='inline-preview')focusAction='.workspace [data-act=run]';
+  d.close();render();
  });
  const cancel=node('button','Cancel');cancel.onclick=()=>d.close();
  d.append(save,cancel);d.addEventListener('close',()=>d.remove());document.body.append(d);d.showModal();
@@ -422,6 +426,7 @@ function showExecutionSettings(t,source){
 
 
 function promptContents(container,inspection,permission,once=false){
+ if(inspection.mode==='local'&&!globalThis.LanguageModel)container.append(node('p','On-device AI is unavailable in this browser. Check device availability or use a browser with on-device support.','hint'));
  const route={local:'On-device only · no cloud fallback',hybrid:'Prefer device · cloud fallback',cloud:'Cloud only'}[inspection.mode];
  container.append(node('p','Requested route: '+route+'.'));
  if(inspection.mode!=='local')container.append(node('p','Google via Firebase AI Logic · '+(once?'one request only; choosing Send grants permission for this exact prompt.':'cloud permission '+(permission?'on.':'off.'))+' Requests may use project quota.'));
@@ -459,6 +464,7 @@ function renderInlineDraft(draft){
  if(needsPermission)section.append(node('p','Use Edit execution to allow hybrid cloud fallback, or choose On-device only or Cloud only and review the new prompt.','hint'));
  const buttons=node('div',undefined,'actions');
  buttons.append(actionButton(mode==='cloud'?'Send to Google for a draft':'Run inspected task only','inline-send',()=>confirmInlineDraft(draft),'primary',active||needsPermission));
+ if(needsPermission&&!draft.saveOnSend)buttons.append(actionButton('Edit execution','inline-edit',()=>showExecutionSettings(draft.task,'inline-preview'),undefined,active));
  buttons.append(actionButton('Cancel','inline-cancel',()=>{closeInlineDraft(true);render();}));
  section.append(buttons);
  return section;

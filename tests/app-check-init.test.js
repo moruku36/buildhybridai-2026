@@ -79,7 +79,9 @@ test('verification makes one explicit exchange and never returns its credential'
 test('all Firebase routes receive exactly the same text-only options as diagnostics',async()=>{
  const {deviceCheckOptions}=await import('../src/device-diagnostics.js');
  for(const mode of ['local','hybrid','cloud']){
-  const {api,context}=await boot({dev:true});await api.prepareModel(mode).ready;
+  const {api,context}=await boot({dev:true});
+  context.LanguageModel={}; // The stubbed SDK represents a browser with the device API.
+  await api.prepareModel(mode).ready;
   const call=context.trace.find(x=>x.event==='model');
   assert.deepEqual(JSON.parse(JSON.stringify(call.options.onDeviceParams.createOptions)),deviceCheckOptions());
   assert.deepEqual(deviceCheckOptions(),{expectedInputs:[{type:'text',languages:['en']}],expectedOutputs:[{type:'text',languages:['en']}]});

@@ -92,6 +92,7 @@ test('1 Unicode and escaped JSON retain all task content with exact prompt UTF-8
 test('2 the displayed frozen prompt dispatches exactly once through ONLY_ON_DEVICE and keeps receipt v1',async t=>{
  const chosen=task('chosen',{title:'Chosen 📚',brief:'Public "sample"\nKeep all content.',priority:3,sequence:1});
  const {w,control}=await boot(t,[task('higher-priority'),chosen]);
+ w.LanguageModel={}; // Device preparation and generation are still handled by the offline SDK stub.
  await button(card(w,chosen.title),'Run this task only').onclick();
  const d=inspection(w),shown=d.querySelector('pre').textContent;
  assert.equal(shown,inspectDraft(chosen).prompt);
