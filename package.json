@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
+    "stage:hosting": "node scripts/stage-hosting.js",
+    "verify:hosting": "node scripts/verify-hosting.js",
     "test": "node --test tests/*.test.js",
     "build:core": "cargo build --manifest-path core/Cargo.toml --target wasm32-unknown-unknown --release && node scripts/copy-core.js"
   },

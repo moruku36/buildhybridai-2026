@@ -32,16 +32,32 @@ These are owner actions. They need a Firebase login and change a public site.
 1. Put the public Web app configuration in ignored `.env.local` (names in `.env.example`). A production build needs a registered public site key: a score-based reCAPTCHA Enterprise Web key in `VITE_APPCHECK_ENTERPRISE_SITE_KEY` (preferred when set), or an existing registered reCAPTCHA v3 key in `VITE_APPCHECK_SITE_KEY`. The development debug path is removed from builds.
 2. For a new setup, create or select a score-based reCAPTCHA Enterprise Web key in the same Google Cloud/Firebase project, restricted to the production hostname(s) (for example `<project>.web.app`); do not add `localhost`. Register the Web app with that key in Firebase App Check. If using an existing v3 registration, keep the matching key and confirm its domain allowlist covers the intended host. Keep AI Logic enforcement on in either case.
 3. Make sure `public/relay_core.wasm` exists (`npm run build:core`, or the CI artifact above).
-4. Build and deploy:
+4. Build the current app (or use verified current release bytes for a cache-only change), then create a fresh Hosting stage. For a transition, supply the verified archive for the live release and every earlier version whose HTML may still be in use. For a first deployment with no prior artifacts, omit the archive arguments.
+
+   Before staging, obtain an independently approved full-bundle SHA-256 inventory for this release direction, based on the verified current output, the complete retention set and the expected stage metadata. It must cover every file under the stage root, including `firebase.json`, `current-assets.sha256`, and all of `dist/` (current HTML, WASM, current and retained assets). Use one lowercase SHA-256, two spaces and a stage-relative file path per line. Keep this inventory outside the stage; do not generate it from the stage being checked or substitute its asset-only manifest.
 
    ```sh
-   npm ci
-   npm run build
-   npx firebase-tools login
-   npx firebase-tools deploy --only hosting --project <project-id>
+   npm ci && npm run build &&
+     npm run stage:hosting -- ../hosting-stage /path/to/prior/dist /path/to/prior/current-assets.sha256 &&
+     npm run verify:hosting -- ../hosting-stage /path/to/approved-forward.bundle.sha256
    ```
 
-5. Open the hosted URL in a supported desktop Chrome, confirm the sidebar shows **Rust / WASM core**, then run **Initialize connection** and **Verify App Check** before any inference.
+   Each archive argument pair points to an archived `dist/` and its trusted, previously saved `current-assets.sha256`. Repeat the pair for multiple releases. The manifest uses lowercase SHA-256, two spaces, and a path such as `assets/index-AbCd1234.js` per line. For releases predating this command, derive the asset-only list from verified release receipts, not unverified local files. The staging command rejects digest mismatches and different bytes for any shared hashed URL. It only copies prior hashed assets, not prior HTML or WASM. Check that the current stable WASM URL remains compatible with retained JavaScript, or version the WASM URL before making an incompatible change.
+
+   Use the generated stage, not the source checkout, as the release artifact. Verify `/` and `/index.html` both return the same current HTML with `Cache-Control: no-cache`; confirm current and retained module URLs return JavaScript and the expected bytes, `/relay_core.wasm` still revalidates, and a nonexistent asset returns a non-immutable 404. There are no HTML rewrites; if adding any, match cache headers on each incoming route, not only on the rewrite destination, and keep missing assets out of HTML fallback routes.
+
+   Archive the verified stage and its current-only manifest. Do not prune assets needed by legacy cached HTML until the old freshness window (observed as one hour before this change) has elapsed from cutover. Keep assets longer if there are still open pages that can lazy-load them.
+
+   **Rollback:** Stage the verified rollback target as current, passing the running release **and every other still-needed historical release** as archive pairs. The running release's current-only manifest does not list its retained historical assets. For example, a rollback targeting #23 after a cache-only #23 cutover must still include #22 as a prior while #22 clients may need its assets. Use a separately approved complete rollback inventory and the same verification and deploy sequence below, substituting the rollback stage and inventory paths. Do not directly re-activate an old version that restores the broken cache rules.
+
+5. Staging success is not release readiness. After the local wire checks above, log in if needed, then run this from the source checkout. The deploy command runs from the exact stage and only if the inventory and byte verification succeeds:
+
+   ```sh
+   npm run verify:hosting -- ../hosting-stage /path/to/approved-forward.bundle.sha256 &&
+     (cd ../hosting-stage && npx firebase-tools deploy --only hosting --project YOUR_PROJECT_ID)
+   ```
+
+6. Open the hosted URL in a supported desktop Chrome, confirm the sidebar shows **Rust / WASM core**, then run **Initialize connection** and **Verify App Check** before any inference.
 
 ## Still open
 
