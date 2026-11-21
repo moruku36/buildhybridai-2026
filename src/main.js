@@ -540,7 +540,7 @@ function showHumanEditor(t){
  d.dataset.preserveEdit='true';
  text.id='human-result-text';text.maxLength=20000;text.value=reviewedText(t);label.htmlFor=text.id;label.append(text);
  const version=JSON.stringify(t.result),state=t.state;
- const original=node('details');original.append(node('summary','Original generated text (unchanged)'),node('pre',t.result.text));
+ const original=node('details');original.append(node('summary','Original result text (unchanged)'),node('pre',t.result.text));
  d.append(node('h2','Edit result locally'),node('p','Original text, source and generation time remain unchanged. Saving changed text removes approval and returns the task to review. No AI request or cloud transmission. Only the latest local edit is kept.'),original,label);
  const error=node('p',undefined,'error');error.setAttribute('role','alert');
  const save=node('button','Save local edit');save.dataset.saveEdit='true';save.onclick=()=>withBoardWrite(()=>{
@@ -557,7 +557,7 @@ function showHandoff(t,packet=false){
   const text=packet?handoffPacket(t):handoffText(t),version=JSON.stringify(t),d=node('dialog'),area=node('textarea'),label=node('label',packet?'Approved handoff packet':'Approved handoff text');
   d.setAttribute('aria-label',packet?'Approved context and result packet':'Approved text for manual handoff');
   area.id=packet?'approved-handoff-packet':'approved-handoff-text';area.readOnly=true;area.value=text;label.htmlFor=area.id;label.append(area);
-  d.append(node('h2',packet?'Approved context and result packet':'Approved text for manual handoff'),node('p','Original source: '+t.result.source+'. '+(t.result.humanEdit?'Human-edited locally and reapproved.':'Original draft approved.')+' Select and copy manually. Opening this view sends, downloads and executes nothing. This is a snapshot; edits later require approval again.'),label);
+  d.append(node('h2',packet?'Approved context and result packet':'Approved text for manual handoff'),node('p','Original source: '+t.result.source+'. '+(t.result.humanEdit?'Human-edited locally and reapproved.':'Original result approved.')+' Select and copy manually. Opening this view sends, downloads and executes nothing. This is a snapshot; edits later require approval again.'),label);
   if(packet){
    const error=node('p',undefined,'error');error.setAttribute('role','alert');
    const status=node('p');status.setAttribute('role','status');
@@ -603,14 +603,14 @@ function renderResult(t,d,inline=false){
  }else d.setAttribute('aria-label',t.title);
  const original=t.result;
  d.append(head,node('p',`${original.humanEdit?'Human-edited version; original source: ':''}${original.source} · Original created: ${original.createdAt}`),
-  node('h3','Original draft execution'));
+  node('h3',t.kind==='checklist'?'Local checklist result':'Original draft execution'));
  for(const line of executionReceiptLines(original))d.append(node('p',line));
  d.append(node('pre',reviewedText(t)));
  if(original.humanEdit){
   const edit=original.humanEdit;
   d.append(node('p','Human-edited locally · '+edit.editedAt+(edit.approvedAt?' · Reapproved '+edit.approvedAt:' · Approval required')));
   const originalText=node('details');
-  originalText.append(node('summary','Original generated text (unchanged)'),node('pre',original.text));
+  originalText.append(node('summary','Original result text (unchanged)'),node('pre',original.text));
   d.append(originalText);
  }
  const reviewError=node('p',undefined,'error');

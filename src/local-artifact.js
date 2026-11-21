@@ -13,6 +13,6 @@ export function buildChecklist(task,now=new Date().toISOString()){
  return {text:text.join('\n')+'\n',source:LOCAL_SOURCE,createdAt:now};
 }
 export function approvedMarkdown(task){
- if(task.state!=='done'||task.result?.source!==LOCAL_SOURCE||typeof task.result.text!=='string')throw Error('Approve a local checklist before downloading.');
- return task.result.text;
+ if(task.kind!=='checklist'||task.state!=='done'||task.result?.source!==LOCAL_SOURCE||typeof task.result.text!=='string'||(task.result.humanEdit&&!task.result.humanEdit.approvedAt))throw Error('Approve the current checklist before downloading.');
+ return task.result.humanEdit?.text??task.result.text;
 }
