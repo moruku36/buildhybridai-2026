@@ -298,7 +298,14 @@ function openRestoreDialog() {
       currentTaskId = currentTask()?.id ?? tasks[0].id;
       notice = 'Board restored from backup.';
       return true;
-    }, message => { status.textContent = message; });
+    }, message => {
+      if (dialog.isConnected) {
+        status.textContent = message;
+      } else if (document.activeElement === document.body) {
+        // A stale snapshot removed the dialog and rebuilt the underlying board.
+        (findFocusTarget('a:restore-empty') || $('#ws-h'))?.focus();
+      }
+    });
     if (restored) dialog.close('restored');
     saving = file.disabled = cancel.disabled = confirm.disabled = false;
   };
