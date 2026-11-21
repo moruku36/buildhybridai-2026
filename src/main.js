@@ -8,6 +8,7 @@ import {makeReviewFixture} from './review-fixture.js';
 import {showIssueIntake} from './issue-intake.js';
 import {buildJsonReport} from './json-check.js';
 import {buildChecklist,approvedMarkdown,LOCAL_SOURCE} from './local-artifact.js';
+import {readBoardExportFile} from './board-restore.js';
 import {archiveRejectedDraft} from './draft-history.js';
 import {queueActionLabel} from './queue-action-label.js';
 import './style.css';
@@ -44,11 +45,11 @@ function checkSnapshot(){
   throw Error(STALE_BOARD_NOTICE);
  }
 }
-function persist(){
+function persist(storageFailure='Storage is unavailable or full. No further execution; export your board before closing.'){
  if(!lockHeld)throw Error('Board lock required. No changes saved.');
  checkSnapshot();
  try{const value=JSON.stringify(tasks);localStorage.setItem(key,value);storageSnapshot=value;if(notice===STALE_BOARD_NOTICE)notice='Board changes saved.';}
- catch{throw Error('Storage is unavailable or full. No further execution; export your board before closing.');}
+ catch{throw Error(storageFailure);}
 }
 async function withBoardWrite(action,onError){
  try{
@@ -215,12 +216,112 @@ function openTask(t){
  disclosures.queue=false;
  render();
 }
+function canRestoreBoard() {
+  return locksAvailable && !active && !storageError && tasks.length === 0 &&
+    (storageSnapshot === null || /^\s*\[\s*\]\s*$/u.test(storageSnapshot));
+}
+
+function openRestoreDialog() {
+  if (!canRestoreBoard()) return;
+
+  const dialog = node('dialog', undefined, 'modal');
+  dialog.setAttribute('aria-label', 'Restore board from backup');
+  const file = node('input');
+  file.id = 'restore-file-input';
+  file.type = 'file';
+  file.accept = 'application/json,.json';
+  const status = node('p', 'Choose a Relay board JSON file.');
+  status.setAttribute('role', 'status');
+  const preview = node('div', undefined, 'restore-preview');
+  const cancel = node('button', 'Cancel', 'secondary');
+  const confirm = node('button', 'Restore board', 'primary');
+  cancel.type = confirm.type = 'button';
+  confirm.disabled = true;
+  dialog.append(
+    node('h2', 'Restore board from backup'),
+    node('p', 'Choose a backup you trust. Saved approvals and receipts are not independently verified. Nothing runs or leaves this browser.'),
+    labelControl('Backup file', file), status, preview, cancel, confirm,
+  );
+
+  let prepared = null;
+  let readId = 0;
+  let saving = false;
+  file.onchange = async () => {
+    const id = ++readId;
+    prepared = null;
+    confirm.disabled = true;
+    preview.replaceChildren();
+    const selected = file.files[0];
+    if (!selected) {
+      status.textContent = 'Choose a Relay board JSON file.';
+      return;
+    }
+    status.textContent = 'Reading backup…';
+    try {
+      const backup = await readBoardExportFile(selected);
+      if (id !== readId || !dialog.isConnected) return;
+      prepared = backup;
+      preview.replaceChildren(
+        node('p', `Tasks: ${backup.tasks.length}`),
+        node('p', `Permissions reset: ${backup.permissionsCleared}`),
+        node('p', `Interrupted running tasks: ${backup.interrupted}`),
+        node('p', `Previously approved in file: ${backup.tasks.filter(task => task.state === 'done').length}`),
+        node('p', `Destination: ${location.origin}`),
+      );
+      status.textContent = 'Backup is valid. Review the preview, then restore.';
+      confirm.disabled = false;
+    } catch (error) {
+      if (id === readId && dialog.isConnected) status.textContent = error.message;
+    }
+  };
+
+  cancel.onclick = () => dialog.close();
+  dialog.oncancel = event => { if (saving) event.preventDefault(); };
+  confirm.onclick = async () => {
+    if (!prepared || saving) return;
+    const backup = prepared;
+    saving = file.disabled = cancel.disabled = confirm.disabled = true;
+    status.textContent = 'Restoring board…';
+    const restored = await withBoardWrite(() => {
+      if (!dialog.isConnected || !canRestoreBoard()) {
+        throw Error('Restore is only available on an empty board.');
+      }
+      const previous = tasks;
+      tasks = backup.tasks;
+      try {
+        persist('Storage is unavailable or full. The destination is unchanged. Keep your backup and try again when storage is available.');
+      } catch (error) {
+        if (tasks === backup.tasks) tasks = previous;
+        throw error;
+      }
+      showComposer = false;
+      currentTaskId = currentTask()?.id ?? tasks[0].id;
+      notice = 'Board restored from backup.';
+      return true;
+    }, message => { status.textContent = message; });
+    if (restored) dialog.close('restored');
+    saving = file.disabled = cancel.disabled = confirm.disabled = false;
+  };
+  dialog.addEventListener('close', () => {
+    dialog.remove();
+    if (dialog.returnValue === 'restored') {
+      focusWorkspaceHeading = true;
+      render();
+    }
+  });
+  document.body.append(dialog);
+  dialog.showModal();
+}
+
 function renderOverview(){
  const aside=node('aside',undefined,'overview');
  aside.setAttribute('aria-labelledby','tasks-heading');
  const h=node('h2','Tasks');h.id='tasks-heading';
  aside.append(h);
- if(!tasks.length)aside.append(node('p','No tasks yet.','overview-empty'));
+ if(!tasks.length){
+  aside.append(node('p','No tasks yet.','overview-empty'));
+  if(canRestoreBoard())aside.append(actionButton('Restore from backup','restore-empty',openRestoreDialog));
+ }
  else{
   const states=['review','blocked','running','queued','done'];
   const labels={review:'To review',blocked:'Needs attention',running:'Running',queued:'Ready',done:'Approved'};
