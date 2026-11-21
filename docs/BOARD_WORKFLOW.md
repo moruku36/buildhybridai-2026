@@ -42,7 +42,7 @@ Choose **Task type → Local checklist** when adding a new task. The brief suppl
 
 Start queue processes it in the same priority/FIFO order through running → review. The formatter deterministically produces Markdown with all items unchecked, explicitly labeled **LOCAL_DETERMINISTIC**. It organizes supplied text; it does not perform the listed work, interpret arbitrary commands, call a model, initialize Firebase, or send data. Reviewer notes are copied into the next document as notes, not interpreted or applied as edits.
 
-Approve result marks the document reviewed, not the underlying checklist work completed. Only then does Read result offer **Download approved Markdown**. Download requires a separate click, uses the fixed safe filename `relay-checklist.md`, and follows the browser's save settings (a save dialog is not guaranteed). No file is automatically written on queue completion or approval. User text is escaped for Markdown/HTML and displayed as plain text in the review UI. The existing Export continues to export the whole local board.
+Approve result marks the document reviewed, not the underlying checklist work completed. Only then does Read result offer **Download approved Markdown**. Download requires a separate click, uses the fixed safe filename `relay-checklist.md`, and follows the browser's save settings (a save dialog is not guaranteed). No file is automatically written on queue completion or approval. The generated checklist escapes task text; a reviewed local edit is exported as written. The review UI displays both as plain text. The existing Export continues to export the whole local board.
 
 Local formatting does not consume the AI session-attempt counter or require cloud consent, and can run after the six-attempt AI limit. It does not bypass a higher-priority AI task blocked by consent/configuration, or falsely establish device/cloud inference verification. The existing Rust/WASM core remains required for Start queue; no ABI or toolchain change was made.
 
@@ -85,9 +85,11 @@ Validation: 50 offline tests and the production build passed. New tests cover ac
 
 ## Local human edits and approved handoff text
 
-AI draft results in review or done now offer **Edit result locally**. This applies to AI drafts only, not preview fixtures, local checklists or machine-generated JSON validation reports. The original generated text, inference source and generation timestamp remain unchanged and viewable. A separate latest human-edited text (maximum 20,000 characters) and edit timestamp are stored locally. The UI labels the human version separately from its original inference source; editing never establishes new inference evidence.
+AI drafts and local checklists in review or done offer **Read result → Edit result locally**. Preview results and fixed JSON validation reports are not editable. The original text, source and creation time remain unchanged and viewable. A separate latest human-edited text (maximum 20,000 characters) and edit timestamp are stored locally. The UI labels the human version separately from its original inference source; editing never establishes new inference evidence.
 
 Saving changed text uses the explicit edit event in both Rust and JavaScript, returning review or done to review. Prior approval is removed; a separate Approve result is required again. Saving identical text leaves the prior state unchanged. Cancel discards unsaved changes. Only the latest local edit is retained, not a full edit-version history.
+
+After reapproval, a local checklist can be downloaded as Markdown or inspected and downloaded as an approved JSON packet. Neither path uses AI. Older versions cannot open boards or backups that contain an edited checklist result. Keep a pre-upgrade backup if you need to roll back.
 
 After approval, **Show approved handoff text** exposes a read-only, selectable snapshot for manual copying. It does not invoke the clipboard API, transmit text, download a file or execute the instructions. A later edit requires approval again but cannot revoke a snapshot already copied elsewhere. Human edits do not enter the AI prompt automatically. Sending back preserves separate bounded original and edited excerpts in local history before clearing the current result; each excerpt is capped at 8,000 characters, and both count against the existing shared 80,000-character budget.
 
@@ -109,7 +111,7 @@ Validation: 58 offline tests passed and a production build with VITE_REVIEW_FIXT
 
 ## Approved context-and-result handoff packet
 
-For approved AI drafts, **Show approved handoff packet** complements the existing body-only handoff. It displays read-only JSON with format `relay-approved-handoff-v1`: the stored task ID/title/priority/brief, recognizable reviewed issue goal/constraints/completion criteria, original text, current approved text, original source/creation time, human-edit time, approval time and snapshot assembly time.
+For approved AI drafts and local checklists, **Show approved handoff packet** complements the existing body-only handoff. It displays read-only JSON with format `relay-approved-handoff-v1`: the stored task ID/title/priority/brief, recognizable reviewed issue goal/constraints/completion criteria, original text, current approved text, original source/creation time, human-edit time, approval time and snapshot assembly time.
 
 The exact stored brief is always included. Structured issue context is extracted only from Relay's own canonical issue-intake brief format; ordinary or unrecognized briefs retain their exact text and have null structured context. The raw pasted issue, ignored fields and unstored source URL are not reconstructed. This is not a record of every historical edit.
 

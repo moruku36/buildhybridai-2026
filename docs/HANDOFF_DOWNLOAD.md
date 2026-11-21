@@ -1,6 +1,6 @@
 # Download an inspected approved handoff packet
 
-Use the existing review flow to approve an AI draft (and reapprove any local edit), then:
+Approve an AI draft or local checklist (and reapprove any local edit), then:
 
 1. Open **Read result** → **Show approved handoff packet**.
 2. Inspect the full JSON. It includes the stored request, original draft, current approved text, content assessment and original execution receipt when one exists.
