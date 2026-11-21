@@ -271,7 +271,10 @@ function openRestoreDialog() {
       status.textContent = 'Backup is valid. Review the preview, then restore.';
       confirm.disabled = false;
     } catch (error) {
-      if (id === readId && dialog.isConnected) status.textContent = error.message;
+      if (id === readId && dialog.isConnected) {
+        file.value = '';
+        status.textContent = error.message;
+      }
     }
   };
 
