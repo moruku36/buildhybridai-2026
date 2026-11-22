@@ -826,7 +826,20 @@ async function runLocked(taskId,inspected,oneTimeCloudTask=null){
   });task.result.executionReceipt=createExecutionReceipt(requestedMode,task.result.source,performance.now()-startedAt);task.result.source=task.result.executionReceipt.actualSource;recordInference(observed,task.result.source);}
   move(core,task,'result');notice=local?'Local result ready for review. No AI or external work executed.':`Draft ready for review. Actual inference: ${actualInferenceLabel(task.result)}.`;
   if(stop)notice+=' Queue paused.';
- }catch(e){if(!tasks.includes(task))throw e;move(core,task,'fail');task.error=String(e.message||e);notice=local?'Local formatting failed. No automatic retry.':'Request failed or dispatch stopped. No automatic retry; inspect the error and quota before retrying.';stop=true;}
+ }catch(e){
+  if(!tasks.includes(task))throw e;
+  move(core,task,'fail');
+  // Firebase AI Logic 3.x exposes the short code and numeric HTTP status.
+  // Its full message can include a provider URL and response body.
+  const quotaLimited=!local&&inspection.mode!=='local'&&e?.code==='fetch-error'&&e.customErrorData?.status===429;
+  task.error=quotaLimited
+   ? 'Google returned a rate limit or quota error (HTTP 429). Wait if the limit is temporary, or ask the project owner to check project quota and billing before retrying.'
+   : String(e.message||e);
+  notice=local
+   ? 'Local formatting failed. No automatic retry.'
+   : 'Request failed or dispatch stopped. No automatic retry; inspect the error and quota before retrying.';
+  stop=true;
+ }
  if(taskId!==undefined){stop=true;notice+=' Other queued tasks were not started.';}
  if(task.state==='review'&&currentTaskId===inlineResultId&&inlineResultId===task.id)focusAction='#inline-result-heading';
  persist();render();
