@@ -15,7 +15,7 @@ async function boot({dev=false,host='localhost',siteKey='',enterpriseKey='',optI
   export async function getToken(appCheck,forceRefresh){globalThis.trace.push({event:'exchange',forceRefresh});return {token:'synthetic-never-exposed-response'}}
   export function initializeAppCheck(app,options){globalThis.trace.push({event:'appcheck',debug:globalThis.FIREBASE_APPCHECK_DEBUG_TOKEN,key:options.provider.key,kind:options.provider.kind,provider:options.provider,refresh:options.isTokenAutoRefreshEnabled});return {}}
   export function getAI(){return {}}
-  export class GoogleAIBackend{}
+  export class AgentPlatformBackend{}
   export const InferenceMode={ONLY_ON_DEVICE:'only_on_device',PREFER_ON_DEVICE:'prefer_on_device',ONLY_IN_CLOUD:'only_in_cloud'};
   export function getGenerativeModel(ai,options){globalThis.trace.push({event:'model',options});return {initializeDeviceModel:async()=>{},generateContent:()=>{throw Error('No real inference allowed in test')}}}
   `,loader:'js'}));

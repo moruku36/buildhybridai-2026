@@ -28,7 +28,7 @@ const bundle=await build({
    `};
    if(args.path==='firebase/ai')return {contents:`
     export const InferenceMode={ONLY_ON_DEVICE:'ONLY_ON_DEVICE',PREFER_ON_DEVICE:'PREFER_ON_DEVICE',ONLY_IN_CLOUD:'ONLY_IN_CLOUD'};
-    export class GoogleAIBackend{}
+    export class AgentPlatformBackend{}
     export function getAI(){return {};}
     export function getGenerativeModel(ai,options){
      const control=globalThis.relayTest;control.routes.push(options.mode);
