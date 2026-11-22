@@ -20,7 +20,16 @@ export async function generateInspectedDraft(task,prepared,inspection,assertCurr
  await prepared.ready;
  assertCurrent();
  assertDraftCurrent(task,inspection,'running');
- const result=await prepared.model.generateContent(inspection.prompt);
+ let result;
+ try{
+  result=await prepared.model.generateContent(inspection.prompt);
+ }catch(e){
+  // The SDK's generic rejection does not confirm whether a cloud request ran.
+  if(e?.code==='error'&&(inspection.mode==='cloud'||inspection.mode==='hybrid')){
+   throw new Error('No result was confirmed. The request may have consumed quota. Retry explicitly.');
+  }
+  throw e;
+ }
  const text=result.response.text();
  if(!text.trim()){
   // HTTP success with no text is still a failed draft. Surface only the SDK's

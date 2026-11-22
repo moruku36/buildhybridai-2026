@@ -2,6 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 import {JSDOM} from 'jsdom';
+import {AIError, AIErrorCode} from 'firebase/ai';
 import {previewCore} from '../src/policy.js';
 
 // Exercise the real UI/queue/lock/storage/receipt code. Only the SDK boundary
@@ -21,6 +22,7 @@ const bundle=await build({
     await prepared.ready;
     if(!globalThis.relayTest.held)throw Error('Test expected the board lock');
     globalThis.relayTest.calls.push(task.id);
+    if(globalThis.relayTest.error)throw globalThis.relayTest.error;
     if(globalThis.relayTest.fail)throw Error('Synthetic inference failure');
     return {text:'Synthetic draft, not live inference',source:'in_cloud',createdAt:'2026-11-12T10:00:00Z'};
    }
@@ -105,6 +107,41 @@ test('a failed single-task run blocks only that task and never retries or advanc
  assert.match(w.document.querySelector('.notice').textContent,/Inspect a current queued AI task/);
  assert.deepEqual(saved(w).map(t=>t.state),['blocked','queued']);
  assert.equal(control.held,false);
+});
+
+for(const mode of ['cloud','hybrid']){
+ test(mode+' HTTP 429 gives quota guidance without saving provider details or retrying',async t=>{
+  const {w,control}=await boot(t,[{...task('limited-0'),mode},task('untouched-1')]);
+  const privateDetail='opaque-provider-response-fixture';
+  control.error=new AIError(AIErrorCode.FETCH_ERROR,privateDetail,{status:429});
+  await runInspected(w,runButton(w,'limited-0'));
+
+  const board=saved(w);
+  assert.deepEqual(board.map(t=>t.state),['blocked','queued']);
+  assert.match(board[0].error,/rate limit or quota/i);
+  assert.match(board[0].error,/project quota and billing/i);
+  assert.ok(!JSON.stringify(board).includes(privateDetail));
+  assert.ok(!w.document.body.textContent.includes(privateDetail));
+  assert.match(w.document.querySelector('.notice').textContent,/No automatic retry/);
+  assert.deepEqual(control.calls,['limited-0']);
+
+  await w.document.querySelector('[data-act="return"]').onclick();
+  assert.equal(saved(w)[0].state,'queued');
+  assert.equal(saved(w)[0].cloudAllowed,true);
+  assert.ok(!Object.hasOwn(saved(w)[0],'error'));
+  assert.deepEqual(control.calls,['limited-0']);
+ });
+}
+
+test('local errors and non-429 Firebase errors keep their original diagnostics',async t=>{
+ for(const [mode,status] of [['local',429],['cloud',503],['hybrid','429']]){
+  const {w,control}=await boot(t,[{...task('failed-0'),mode,cloudAllowed:mode!=='local'}]);
+  const error=new AIError(AIErrorCode.FETCH_ERROR,'Synthetic original diagnostic',{status});
+  control.error=error;
+  await runInspected(w,runButton(w,'failed-0'));
+  assert.equal(saved(w)[0].state,'blocked');
+  assert.equal(saved(w)[0].error,error.message);
+ }
 });
 
 test('another tab holding the board lock prevents any single-task execution or save',async t=>{
