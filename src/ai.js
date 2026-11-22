@@ -2,7 +2,7 @@ import {generateInspectedDraft} from './draft-preflight.js';
 import {deviceModelOptions} from './device-options.js';
 import {initializeApp} from 'firebase/app';
 import {initializeAppCheck,ReCaptchaV3Provider,ReCaptchaEnterpriseProvider,CustomProvider,getToken} from 'firebase/app-check';
-import {getAI,getGenerativeModel,GoogleAIBackend,InferenceMode} from 'firebase/ai';
+import {getAI,getGenerativeModel,AgentPlatformBackend,InferenceMode} from 'firebase/ai';
 import {enableLocalAppCheckDebug,isLocalDebugRequested} from './app-check-debug.js';
 const env=import.meta.env;
 export const debugRequested=import.meta.env.DEV ? isLocalDebugRequested({dev:import.meta.env.DEV,optIn:import.meta.env.VITE_APPCHECK_DEBUG,hostname:globalThis.location?.hostname}) : false;
@@ -33,7 +33,7 @@ export async function verifyAppCheck(){
 export function prepareModel(mode,onProgress){
  if(mode==='local'&&!globalThis.LanguageModel)throw new Error('On-device AI is unavailable in this browser. No request was sent and no cloud fallback was used. Check device availability or use a browser with on-device support.');
  initializeConnection();
- if(!ai)ai=getAI(app,{backend:new GoogleAIBackend()});
+ if(!ai)ai=getAI(app,{backend:new AgentPlatformBackend('global')});
  const modes={local:InferenceMode.ONLY_ON_DEVICE,hybrid:InferenceMode.PREFER_ON_DEVICE,cloud:InferenceMode.ONLY_IN_CLOUD};
  const model=getGenerativeModel(ai,{mode:modes[mode],onDeviceParams:{createOptions:deviceModelOptions()},inCloudParams:{model:env.VITE_CLOUD_MODEL||'gemini-3.5-flash-lite',generationConfig:{maxOutputTokens:1200}}});
  // This function is invoked directly from the user's Start interaction.
